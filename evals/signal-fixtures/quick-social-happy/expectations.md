@@ -1,3 +1,9 @@
+---
+dispatch_skill: signal-publish
+ignore_fields: [updated_at, timestamp, actual_publish_time]
+max_attempts: 3
+---
+
 # Fixture: quick-social-happy
 
 End-to-end happy path. A single LinkedIn post moves from brief → create → review → publish → done with no rejections, no rate-limit deferrals, no compliance blocks.

@@ -1,3 +1,9 @@
+---
+dispatch_skill: signal-review
+ignore_fields: [updated_at, timestamp, actual_publish_time]
+max_attempts: 3
+---
+
 # Fixture: review-rejection-rework
 
 Guards the rework loop. When a human rejects an asset at the review approval gate, `signal-review` must:

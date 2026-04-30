@@ -1,3 +1,9 @@
+---
+dispatch_skill: signal-publish
+ignore_fields: [updated_at, timestamp, actual_publish_time]
+max_attempts: 3
+---
+
 # Fixture: publish-duplicate-skipped
 
 Guards idempotent publish. Re-running publish on a task whose assets already have entries in `publish-log.md` must record `skipped-duplicate` rather than appending a fresh `published` entry.

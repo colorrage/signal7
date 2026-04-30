@@ -1,3 +1,9 @@
+---
+dispatch_skill: signal-review
+ignore_fields: [updated_at, timestamp, actual_publish_time]
+max_attempts: 3
+---
+
 # Fixture: compliance-default-clear
 
 Guards the compliance template default flip. A non-regulated brief leaves `compliance.md` at the new default (`status: clear`); `signal-review` does **not** halt at the compliance check.

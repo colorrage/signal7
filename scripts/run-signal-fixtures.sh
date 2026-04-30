@@ -26,6 +26,11 @@ set -o pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 FIXTURES_DIR="$ROOT/evals/signal-fixtures"
+SKILLS_DIR="$ROOT/skills"
+
+# Legal signal_verdict values (from gates.md)
+VERDICT_VALUES_RE='^(awaiting-input|awaiting-approval|review-pass-approval-pending|phase-complete|redirect)$'
+VERDICT_VALUES_LIST="awaiting-input awaiting-approval review-pass-approval-pending phase-complete redirect"
 
 if [[ ! -d "$FIXTURES_DIR" ]]; then
   echo "fixtures dir not found: $FIXTURES_DIR" >&2
@@ -61,6 +66,64 @@ yaml_scalar() {
       print
       exit
     }'
+}
+
+# Extract a markdown section (from `## Section` heading to next `##` or EOF).
+# prints section body to stdout (excluding the heading line).
+extract_section() {
+  local file="$1" heading="$2"
+  awk -v h="^## $heading$" '
+    BEGIN{in_sec=0}
+    $0 ~ h {in_sec=1; next}
+    in_sec && /^## / {exit}
+    in_sec {print}
+  ' "$file"
+}
+
+# Extract the value of a YAML scalar key from stdin (a single YAML block).
+# Supports signal_verdict.verdict, .target, .summary (indented under signal_verdict:).
+yaml_block_scalar() {
+  local key="$1"
+  awk -v k="$key" '
+    BEGIN{depth=0}
+    /^[[:space:]]*signal_verdict:/ {in_block=1; next}
+    in_block && $0 ~ "^[[:space:]]*"k":" {
+      val=$0; sub(/^[^:]*:[[:space:]]*/,"",val)
+      sub(/[[:space:]]+#.*/,"",val); gsub(/"/,"",val)
+      gsub(/^[[:space:]]+|[[:space:]]+$/,"",val)
+      print val
+      found=1
+      exit
+    }
+    in_block && /^[[:space:]]*[a-zA-Z_]/ && $0 !~ "^[[:space:]]*"k":" {exit}
+  '
+}
+
+# Extract all fenced YAML blocks from stdin joined by blank-line separators.
+# Each block is the body between ```yaml and ``` markers.
+extract_yaml_blocks() {
+  awk '
+    /^```yaml/ {in_block=1; next}
+    in_block && /^```/ {in_block=0; print ""; next}
+    in_block {print}
+  '
+}
+
+# Extract backtick-quoted verdict values from `Allowed verdicts:` line in body.
+# Body text is stdin (everything before ## Output Contract).
+get_allowed_verdicts() {
+  awk '
+    /^Allowed verdicts:/ {
+      line=$0
+      # Extract comma-separated backtick-quoted values
+      while (match(line, /`[^`]*`/)) {
+        val=substr(line, RSTART+1, RLENGTH-2)
+        print val
+        line=substr(line, RSTART+RLENGTH)
+      }
+      exit
+    }
+  '
 }
 
 fail() {
@@ -179,6 +242,231 @@ check_review_md() {
   fi
 }
 
+# ─── Layer 1 static checks ──────────────────────────────────────────────────
+
+# check_verdict_encoding_parity:
+#   Parse each SKILL.md `## Output Contract` section, extract every fenced
+#   YAML block, validate it is a valid `signal_verdict` with keys
+#   `verdict`, `target`, `summary` and that `verdict` is one of the 5 legal
+#   values from `gates.md`.
+check_verdict_encoding_parity() {
+  local label="$1" skill_path="$2"
+  local output_contract
+  output_contract="$(extract_section "$skill_path" "Output Contract")"
+  if [[ -z "$output_contract" ]]; then
+    echo "  check_verdict_encoding_parity: SKIP (no ## Output Contract section)"
+    return 0
+  fi
+  local tmpfile
+  tmpfile="$(mktemp)" || { fail "$label" "check_verdict_encoding_parity: cannot create temp file"; return 1; }
+  echo "$output_contract" | extract_yaml_blocks > "$tmpfile"
+  if [[ ! -s "$tmpfile" ]]; then
+    fail "$label" "check_verdict_encoding_parity: no signal_verdict YAML block in Output Contract"
+    rm -f "$tmpfile"
+    return 1
+  fi
+  local block_num=0 any_fail=0 result verdict target summary line
+  while IFS= read -r line; do
+    if [[ -z "$line" ]]; then
+      if [[ $block_num -gt 0 ]]; then
+        if [[ -z "$verdict" || -z "$target" || -z "$summary" ]]; then
+          local missing=""
+          [[ -z "$verdict" ]] && missing="$missing verdict"
+          [[ -z "$target" ]]  && missing="$missing target"
+          [[ -z "$summary" ]] && missing="$missing summary"
+          fail "$label" "check_verdict_encoding_parity: block $block_num missing keys:$missing"
+          any_fail=1
+        elif ! [[ "$verdict" =~ $VERDICT_VALUES_RE ]]; then
+          fail "$label" "check_verdict_encoding_parity: block $block_num illegal verdict '$verdict'"
+          any_fail=1
+        fi
+        verdict=""; target=""; summary=""
+      fi
+      continue
+    fi
+    if [[ "$line" =~ ^signal_verdict: ]]; then
+      block_num=$((block_num + 1))
+      verdict=""; target=""; summary=""
+      continue
+    fi
+    case "${line%%:*}" in
+      *verdict) verdict="$(echo "$line" | awk '{sub(/^[^:]*:[[:space:]]*/,""); sub(/[[:space:]]+#.*/,""); gsub(/"/,""); gsub(/^[[:space:]]+|[[:space:]]+$/,""); print}')" ;;
+      *target)  target="$(echo "$line" | awk '{sub(/^[^:]*:[[:space:]]*/,""); sub(/[[:space:]]+#.*/,""); gsub(/"/,""); gsub(/^[[:space:]]+|[[:space:]]+$/,""); print}')" ;;
+      *summary) summary="$(echo "$line" | awk '{sub(/^[^:]*:[[:space:]]*/,""); sub(/[[:space:]]+#.*/,""); gsub(/"/,""); gsub(/^[[:space:]]+|[[:space:]]+$/,""); print}')" ;;
+    esac
+  done < "$tmpfile"
+  # Process the last block (no trailing blank line)
+  if [[ $block_num -gt 0 ]] && [[ -n "$verdict" || -n "$target" || -n "$summary" ]]; then
+    if [[ -z "$verdict" || -z "$target" || -z "$summary" ]]; then
+      local missing=""
+      [[ -z "$verdict" ]] && missing="$missing verdict"
+      [[ -z "$target" ]]  && missing="$missing target"
+      [[ -z "$summary" ]] && missing="$missing summary"
+      fail "$label" "check_verdict_encoding_parity: block $block_num missing keys:$missing"
+      any_fail=1
+    elif ! [[ "$verdict" =~ $VERDICT_VALUES_RE ]]; then
+      fail "$label" "check_verdict_encoding_parity: block $block_num illegal verdict '$verdict'"
+      any_fail=1
+    fi
+  fi
+  rm -f "$tmpfile"
+  if [[ $any_fail -eq 0 ]]; then
+    echo "  check_verdict_encoding_parity: PASS ($block_num blocks)"
+  fi
+  return 0
+}
+
+# check_output_contract_completeness:
+#   For each phase skill, grep body text for verdict-indicating words
+#   (`return`, `redirect`, `awaiting`) and cross-reference against the
+#   `## Output Contract`. Flag any verdict mentioned in body but absent
+#   from contract, or vice versa.
+check_output_contract_completeness() {
+  local label="$1" skill_path="$2"
+  local output_contract body_text body_verdicts contract_verdicts
+  output_contract="$(extract_section "$skill_path" "Output Contract")"
+  if [[ -z "$output_contract" ]]; then
+    echo "  check_output_contract_completeness: SKIP (no ## Output Contract section)"
+    return 0
+  fi
+  # Declared verdicts from the Allowed verdicts: line (inside Output Contract section)
+  body_verdicts="$(echo "$output_contract" | get_allowed_verdicts | sort -u)"
+  if [[ -z "$body_verdicts" ]]; then
+    echo "  check_output_contract_completeness: SKIP (no 'Allowed verdicts:' line)"
+    return 0
+  fi
+  # Verdicts from YAML blocks in Output Contract
+  contract_verdicts="$(echo "$output_contract" | extract_yaml_blocks | while IFS= read -r line; do [[ -z "$line" ]] && continue; echo "$line"; done | awk '
+    /^[[:space:]]*verdict:/ {
+      val=$0; sub(/^[^:]*:[[:space:]]*/,"",val)
+      sub(/[[:space:]]+#.*/,"",val); gsub(/"/,"",val)
+      gsub(/^[[:space:]]+|[[:space:]]+$/,"",val)
+      print val
+    }
+  ' | sort -u)"
+  if [[ -z "$contract_verdicts" ]]; then
+    fail "$label" "check_output_contract_completeness: no verdict YAML blocks in Output Contract"
+    return 1
+  fi
+  local diff1 diff2
+  diff1="$(comm -23 <(echo "$body_verdicts") <(echo "$contract_verdicts"))"
+  diff2="$(comm -13 <(echo "$body_verdicts") <(echo "$contract_verdicts"))"
+  local any_fail=0
+  if [[ -n "$diff1" ]]; then
+    while IFS= read -r v; do
+      fail "$label" "check_output_contract_completeness: verdict '$v' declared in body but absent from Output Contract YAML examples"
+    done <<<"$diff1"
+    any_fail=1
+  fi
+  if [[ -n "$diff2" ]]; then
+    while IFS= read -r v; do
+      fail "$label" "check_output_contract_completeness: verdict '$v' in Output Contract YAML but not in 'Allowed verdicts:' line"
+    done <<<"$diff2"
+    any_fail=1
+  fi
+  # Scan body text for backtick-quoted verdict values outside Allowed verdicts line
+  local full_body body_backticked
+  full_body="$(awk '/^## Output Contract$/{exit} {print}' "$skill_path")"
+  body_backticked="$(echo "$full_body" | awk '/^Allowed verdicts:/{next} {while(match($0,/`[^`]*`/)){v=substr($0,RSTART+1,RLENGTH-2);$0=substr($0,RSTART+RLENGTH);if(v~/^(awaiting-input|awaiting-approval|review-pass-approval-pending|phase-complete|redirect)$/)print v}}' | sort -u)"
+  if [[ -n "$body_backticked" ]]; then
+    local undeclared
+    undeclared="$(comm -23 <(echo "$body_backticked") <(echo "$body_verdicts"))"
+    if [[ -n "$undeclared" ]]; then
+      while IFS= read -r v; do
+        fail "$label" "check_output_contract_completeness: verdict '$v' referenced in body but not in 'Allowed verdicts:' line"
+      done <<<"$undeclared"
+      any_fail=1
+    fi
+  fi
+  if [[ $any_fail -eq 0 ]]; then
+    echo "  check_output_contract_completeness: PASS"
+  fi
+  return 0
+}
+
+# check_fixture_expectation_parity:
+#   Parse each fixture's expectations.md expected-verdict YAML block and
+#   validate it matches one of the verdicts declared in the target skill's
+#   `## Output Contract`.
+check_fixture_expectation_parity() {
+  local fixture="$1" fixture_dir="$2"
+  local expectations_md="$fixture_dir/expectations.md"
+  [[ -f "$expectations_md" ]] || return 0
+  local fm declared_skill ignore_fields max_attempts
+  fm="$(extract_frontmatter "$expectations_md")"
+  declared_skill="$(echo "$fm" | yaml_scalar dispatch_skill)"
+  ignore_fields="$(echo "$fm" | yaml_scalar ignore_fields)"
+  max_attempts="$(echo "$fm" | yaml_scalar max_attempts)"
+  if [[ -z "$declared_skill" ]]; then
+    fail "$fixture" "check_fixture_expectation_parity: missing dispatch_skill in expectations.md frontmatter"
+    return 1
+  fi
+  if [[ -z "$ignore_fields" ]]; then
+    fail "$fixture" "check_fixture_expectation_parity: missing ignore_fields in expectations.md frontmatter"
+    return 1
+  fi
+  if [[ -z "$max_attempts" ]]; then
+    fail "$fixture" "check_fixture_expectation_parity: missing max_attempts in expectations.md frontmatter"
+    return 1
+  fi
+  # Extract the ## Expected verdict section
+  local section trial
+  section="$(extract_section "$expectations_md" "Expected verdict")"
+  trial="$(echo "$section" | extract_yaml_blocks)"
+  local exp_verdict
+  exp_verdict="$(echo "$trial" | yaml_block_scalar verdict)"
+  if [[ -z "$exp_verdict" ]]; then
+    fail "$fixture" "check_fixture_expectation_parity: no signal_verdict YAML block in Expected verdict section"
+    return 1
+  fi
+  local target_skill
+  target_skill="$declared_skill"
+  if [[ "$target_skill" == "signal" ]]; then
+    if ! echo "$VERDICT_VALUES_LIST" | tr ' ' '\n' | grep -qFx "$exp_verdict"; then
+      fail "$fixture" "check_fixture_expectation_parity: expected verdict '$exp_verdict' is not a legal signal verdict"
+      return 1
+    fi
+    echo "  check_fixture_expectation_parity: PASS (signal orchestrator -> $exp_verdict)"
+    return 0
+  fi
+  # Get that skill's allowed verdicts
+  local skill_path="$SKILLS_DIR/$target_skill/SKILL.md"
+  if [[ ! -f "$skill_path" ]]; then
+    fail "$fixture" "check_fixture_expectation_parity: target skill '$target_skill' not found at $skill_path"
+    return 1
+  fi
+  local allowed
+  allowed="$(extract_section "$skill_path" "Output Contract" | get_allowed_verdicts | sort -u)"
+  if [[ -z "$allowed" ]]; then
+    fail "$fixture" "check_fixture_expectation_parity: target skill '$target_skill' has no 'Allowed verdicts:' line"
+    return 1
+  fi
+  if ! echo "$allowed" | grep -qFx "$exp_verdict"; then
+    fail "$fixture" "check_fixture_expectation_parity: expected verdict '$exp_verdict' not in $target_skill allowed verdicts ($(echo "$allowed" | tr '\n' ' '))"
+    return 1
+  fi
+  echo "  check_fixture_expectation_parity: PASS ($target_skill -> $exp_verdict)"
+  return 0
+}
+
+# ─── Skill-level scan ────────────────────────────────────────────────────────
+
+scan_skills() {
+  echo
+  echo "========== Skill Static Checks =========="
+  for skill_dir in "$SKILLS_DIR"/*/; do
+    [[ -d "$skill_dir" ]] || continue
+    local skill_file="$skill_dir/SKILL.md"
+    [[ -f "$skill_file" ]] || continue
+    local skill_name
+    skill_name="$(basename "$skill_dir")"
+    echo
+    echo "--- skill: $skill_name ---"
+    check_verdict_encoding_parity "$skill_name" "$skill_file"
+    check_output_contract_completeness "$skill_name" "$skill_file"
+  done
+}
+
 run_fixture() {
   local fixture_dir="$1"
   local name
@@ -213,11 +501,21 @@ run_fixture() {
     done < <(find "$task_dir" -maxdepth 1 -type f -name 'A[0-9]*.md')
   done < <(find "$fixture_dir/.signal/tasks" -mindepth 1 -maxdepth 1 -type d 2>/dev/null)
 
+  # Layer 1: fixture expectation parity check
+  check_fixture_expectation_parity "$name" "$fixture_dir"
+
   if (( FAIL_COUNT == 0 )) || ! printf '%s\n' "${FAILS[@]}" | grep -q "^$name:"; then
     PASS_COUNT=$((PASS_COUNT + 1))
     echo "  PASS"
   fi
 }
+
+echo
+echo "============================================================"
+echo "Signal7 Static Checks Runner"
+echo "============================================================"
+
+scan_skills
 
 for fx in "$FIXTURES_DIR"/*/; do
   [[ -d "$fx" ]] || continue
@@ -229,7 +527,7 @@ done
 
 echo
 echo "------------------------------------------------------------"
-echo "Signal7 fixtures: $PASS_COUNT passed, $FAIL_COUNT failures"
+echo "Signal7 checks: $PASS_COUNT passed, $FAIL_COUNT failures"
 if (( FAIL_COUNT > 0 )); then
   printf 'FAIL: %s\n' "${FAILS[@]}"
   exit 1

@@ -1,3 +1,9 @@
+---
+dispatch_skill: signal-brief
+ignore_fields: [updated_at, timestamp, actual_publish_time]
+max_attempts: 3
+---
+
 # Fixture: campaign-blocked-at-intake
 
 Guards the Phase 1 campaign refusal. The user gives a multi-channel goal, `signal-brief` writes `brief.md` with `scope: campaign`, but must refuse to advance because `signal-plan` is unimplemented.

@@ -1,0 +1,41 @@
+---
+id: A1
+parent: S1
+title: LinkedIn launch post (en)
+status: done
+cancelled_reason: null
+asset_type: social-copy
+channel: linkedin
+language: en
+source_asset: null
+depends: []
+writes: ["A1-linkedin-en.md"]
+revision: 0
+brand_version: 1
+product_version: 1
+market: null
+jurisdiction: null
+publish_at: null
+expires_at: null
+review_ai_pass: true
+external_gate: null
+usage_rights: null
+generation_log:
+  - timestamp: 2026-04-30T10:18:00
+    model: claude-opus-4-7
+    worker: signal-social
+    worker_version: 1
+    prompt_path: prompts/A1-r0-signal-social.md
+    prompt_hash: sha256:0000000000000000000000000000000000000000000000000000000000000005
+    content_hash: sha256:0000000000000000000000000000000000000000000000000000000000000006
+---
+
+# LinkedIn launch post (en)
+
+## Content
+
+Q1 by the numbers: 40% YoY growth and 200 new enterprise customers.
+
+## Completion
+
+Generated, reviewed, approved, and published once. User reran /signal.

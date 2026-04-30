@@ -53,6 +53,7 @@ Signal7 mirrors Hyper7's architecture: disk-based state (`.signal/` folder), gat
 - One content worker: `signal-social` (LinkedIn, Instagram, X/Twitter, Facebook copy)
 - The `signal` orchestrator, the foundation reference docs, and the asset/brief/compliance schemas
 - Disk-based state (`.signal/`), idempotent publish ledger, AI review rubric, prompt storage with hashes
+- A three-layer QA testing system: Layer 1 static checks (`scripts/run-signal-fixtures.sh`), Layer 2 live-skill replay (`scripts/replay-fixture.sh` / `scripts/run-all-fixtures.sh`), and Layer 3 manual pre-ship checklist (`evals/qa-checklist.md`). See `evals/signal-fixtures/README.md` for the full documentation.
 - A minimal `signal-task` skill with two operations: `cancel` and `status`
 
 **What is planned but not implemented (Phase 2+):**

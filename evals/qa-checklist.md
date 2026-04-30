@@ -36,13 +36,15 @@ Start from step 2 but stop at the review approval gate (`awaiting: user-approval
 - [ ] Orchestrator applies the redirect; `task.md` shows `phase: create`
 - [ ] System awaits the next asset completion — no infinite loop
 
-## 4. Campaign Phase 2 refusal
+## 4. Campaign planning
 
 Run `/signal Create a campaign for Instagram + LinkedIn`
 
-- [ ] `signal-brief` refuses with a clear refusal message (must contain "not yet implemented" or equivalent)
-- [ ] No `.signal/tasks/S<N>/` directory is created beyond the aborted brief attempt
-- [ ] Brief output includes `scope: campaign` and a readable explanation of the limitation
+- [ ] `signal-brief` writes `brief.md` with `scope: campaign`
+- [ ] After brief approval, `signal-plan` writes `content-plan.md`
+- [ ] Matching `A<N>-*.md` asset stubs are created at the task root
+- [ ] `signal-plan-review` writes `plan-review.md` from a fresh context
+- [ ] Passing plan review advances to `create`; rejected plan review redirects to `plan`
 - [ ] System does not crash, hang, or produce an empty response
 
 ## 5. Duplicate publish

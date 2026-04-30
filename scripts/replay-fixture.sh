@@ -259,21 +259,25 @@ parse_frontmatter_fields() {
 
 create_temp_env() {
     local fixture_dir="$1"
-    TMPDIR="$(mktemp -d 2>/dev/null || mktemp -d -t replay)" || {
-        echo "ERROR: cannot create temp directory" >&2
+    local ts timestamp
+    timestamp="$(date +%Y%m%d-%H%M%S)"
+    ts="${FIXTURE_NAME}-${timestamp}"
+
+    # Create inside the project so skills/ is discoverable from the working dir
+    TMPDIR="$ROOT/.replay-${ts}"
+    mkdir -p "$TMPDIR" || {
+        echo "ERROR: cannot create replay directory: $TMPDIR" >&2
         exit 2
     }
 
-    # Copy .signal snapshot from fixture
+    # Copy .signal snapshot from fixture into the replay dir
     if [[ -d "$fixture_dir/.signal" ]]; then
         cp -r "$fixture_dir/.signal" "$TMPDIR/.signal"
     else
         echo "ERROR: fixture has no .signal/ snapshot: $fixture_dir" >&2
+        rm -rf "$TMPDIR" 2>/dev/null
         exit 2
     fi
-
-    # Copy skills/ so the agent can resolve them relative to its working dir
-    cp -r "$SKILLS_DIR" "$TMPDIR/skills"
 }
 
 # ─── Pre-replay state snapshot ────────────────────────────────────────────────
@@ -325,31 +329,10 @@ snapshot_state() {
 generate_dispatch_prompt() {
     local dispatch_skill="$1"
     local trigger_text="$2"
-    if [[ "$dispatch_skill" == "signal" ]]; then
-        cat <<PROMPT
-You are performing a QA replay test for Signal7. Load the \`signal\` orchestrator skill by reading \`skills/signal/SKILL.md\`, then follow ALL instructions in that file exactly — including reading any referenced documents under \`skills/signal/reference/\`.
-
-The working directory contains a Signal7 project with \`.signal/\` state already initialized. Read the state files under \`.signal/tasks/\` and any other files the orchestrator or dispatched phase skills require.
-
-Trigger event: $trigger_text
-
-Execute the orchestrator completely, including applying phase transitions, dashboard updates, archive moves, and any immediate follow-on dispatches required by \`skills/signal/SKILL.md\`. Write any artifacts the orchestrator or dispatched skills specify.
-
-When finished, your ENTIRE response must consist of exactly one fenced YAML block — the observed \`signal_verdict\` that drove the final orchestrator transition — followed by nothing else. Use this shape:
-
-\`\`\`yaml
-signal_verdict:
-  verdict: <value>
-  target: <value>
-  summary: "<text>"
-\`\`\`
-PROMPT
-        return
-    fi
     cat <<PROMPT
 You are performing a QA replay test for Signal7. Load the \`$dispatch_skill\` skill by reading \`skills/$dispatch_skill/SKILL.md\`, then follow ALL instructions in that file exactly — including reading any referenced documents under \`skills/signal/reference/\`.
 
-The working directory contains a Signal7 project with \`.signal/\` state already initialized. Read the state files under \`.signal/tasks/\` and any other files the skill requires.
+The Signal7 project state for this test lives under \`$TMPDIR/.signal/\`, NOT under the usual \`.signal/\` at the project root. Read the state files under \`$TMPDIR/.signal/tasks/\` and any other files the skill requires. Write all output artifacts into that same \`$TMPDIR/.signal/\` tree — do not touch the project's \`.signal/\` directory.
 
 Trigger event: $trigger_text
 
@@ -399,36 +382,15 @@ dispatch_opencode() {
     local prompt="$1"
     local output rc
     set +o pipefail
-    output="$(opencode run "$prompt" \
-        --dir "$TMPDIR" \
+    # Run from project root so skills/ is discoverable; point .signal/ at the replay dir
+    output="$(cd "$ROOT" && opencode run "$prompt" \
+        --dir "$ROOT" \
         --dangerously-skip-permissions \
-        --format json \
         2>&1)"
     rc=$?
     set -o pipefail
-    # opencode outputs a JSON stream; extract the final assistant text.
-    local result
-    result="$(echo "$output" | python3 -c "
-import sys, json
-last_text = ''
-for line in sys.stdin:
-    line = line.strip()
-    if not line:
-        continue
-    try:
-        event = json.loads(line)
-    except:
-        continue
-    if event.get('type') == 'assistant':
-        blocks = event.get('message', {}).get('content', [])
-        for b in blocks:
-            if b.get('type') == 'text':
-                last_text = b.get('text', '')
-    elif event.get('type') == 'result':
-        last_text = event.get('result', last_text)
-print(last_text)
-" 2>/dev/null || echo "$output")"
-    echo "$result"
+    # opencode outputs plain text with the verdict YAML at the end
+    echo "$output"
     return $rc
 }
 
@@ -784,11 +746,11 @@ main() {
         echo "--- attempt $overall_attempt (behavioral fails: $behavioral_fails/$MAX_ATTEMPTS, host errors: $host_errors) ---"
 
         # Reset temp state for retries: remove old .signal, re-copy from fixture
-        # Re-establish temp directory (may have been cleaned by a signal)
+        # Reset state for retry — recreate .signal/ inside the project-local replay dir
         [[ -d "$TMPDIR/.signal" ]] && rm -rf "$TMPDIR/.signal" 2>/dev/null
         mkdir -p "$TMPDIR/.signal" 2>/dev/null
         cp -r "$FIXTURE_DIR/.signal"/* "$TMPDIR/.signal/" 2>/dev/null || {
-            echo "  cannot recreate temp state (host error), retrying..."
+            echo "  cannot recreate snapshot state (host error), retrying..."
             host_errors=$((host_errors + 1))
             continue
         }

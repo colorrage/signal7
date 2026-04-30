@@ -40,4 +40,4 @@ Three independent assets, one per channel; same launch date.
 
 ## Approval
 
-Status: pending
+Status: approved

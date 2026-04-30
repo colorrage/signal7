@@ -9,4 +9,4 @@ awaiting: null
 
 # Multi-channel mobile app launch
 
-User asked for an Instagram + LinkedIn + email campaign for the new mobile app. Triage classified this as campaign scope; Phase 2 not yet implemented.
+User asked for an Instagram + LinkedIn + email campaign for the new mobile app. Triage classified this as campaign scope and the brief has been approved for planning.

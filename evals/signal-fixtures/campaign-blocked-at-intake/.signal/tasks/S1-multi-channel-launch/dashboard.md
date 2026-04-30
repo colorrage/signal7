@@ -6,7 +6,7 @@ Multi-channel mobile app launch (Instagram + LinkedIn + email).
 
 ## Brief
 
-Drafted with scope: campaign. Refused at intake because campaign is Phase 2.
+Drafted with scope: campaign. Approved and ready for planning.
 
 ## Plan
 
@@ -32,4 +32,5 @@ Awaiting: none
 ## Decisions
 
 - 2026-04-30T11:00:00 - user - opened S1
-- 2026-04-30T11:05:00 - signal-brief - classified scope as campaign; Phase 2 not yet implemented
+- 2026-04-30T11:05:00 - signal-brief - classified scope as campaign
+- 2026-04-30T11:08:00 - user - approved campaign brief

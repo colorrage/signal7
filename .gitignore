@@ -1,2 +1,7 @@
 .DS_Store
 .signal/
+
+# Runtime Signal7 state is ignored by default, but fixture snapshots are
+# shipped test data and must remain trackable.
+!evals/signal-fixtures/**/.signal/
+!evals/signal-fixtures/**/.signal/**

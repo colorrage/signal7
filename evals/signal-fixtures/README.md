@@ -19,7 +19,7 @@ All 7 fixtures are listed below. The last two are orchestrator-level fixtures th
 |---|---|
 | `quick-social-happy/` | The full quick-scope path: brief approved → create → review (AI pass) → user approves → publish. End state is `phase: done`, archived. |
 | `review-rejection-rework/` | A user rejection at the review-approval gate flips the asset to `status: needs-revision` and redirects to `create`. Verifies the rework loop spins forward, not in place. |
-| `campaign-blocked-at-intake/` | `signal-brief` refuses `scope: campaign` with `awaiting-input` while `signal-plan` is unimplemented. |
+| `campaign-blocked-at-intake/` | Legacy-named campaign fixture. Now verifies a campaign brief can advance into Phase 2 planning instead of refusing at intake. |
 | `publish-duplicate-skipped/` | Re-publishing the same asset hits an existing `idempotency_key` in `publish-log.md` and records `skipped-duplicate` rather than appending a duplicate `published` entry. |
 | `compliance-default-clear/` | A non-regulated brief sets `compliance.md` `status: clear` (the new default) and `signal-review` does **not** halt. Guards against re-introducing the `questions-open` default. |
 | `review-redirect-create/` | **Orchestrator-level.** A user rejection at the review gate triggers `signal-review` returning `redirect target: create`; `signal` must then dispatch `signal-create`. Verifies cross-skill routing. |
@@ -98,7 +98,7 @@ Both scripts pass `--host claude|opencode` to select the dispatch CLI. Run `--st
 
 ### Layer 3 — Manual QA checklist
 
-`evals/qa-checklist.md` contains a 5-step pre-ship verification checklist. Steps cover: bootstrap from scratch, quick-scope happy path, review rejection rework, campaign Phase 2 refusal, and duplicate publish.
+`evals/qa-checklist.md` contains a 5-step pre-ship verification checklist. Steps cover: bootstrap from scratch, quick-scope happy path, review rejection rework, campaign planning, and duplicate publish.
 
 ---
 

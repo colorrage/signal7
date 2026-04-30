@@ -4,12 +4,12 @@ description: >
   User-invocable Signal7 task management. Phase 1 ships two operations:
   cancel a task (terminal, archives the folder) and report status (read-only).
   Other operations — list, defer, create-deferred, promote-from-backlog — are
-  Phase 2.
+  planned management work.
 ---
 
 # signal-task
 
-`signal-task` manages tasks outside the phase workflow. It is the only skill besides `signal` that writes `task.md`. Phase 1 ships **cancel** and **status** only; all other operations refuse with a clear "Phase 2 — not yet implemented" message.
+`signal-task` manages tasks outside the phase workflow. It is the only skill besides `signal` that writes `task.md`. Phase 1 ships **cancel** and **status** only; all other operations refuse with a clear "planned, not yet implemented" message.
 
 ## Read First
 
@@ -52,7 +52,7 @@ If `S<N>` is omitted:
 2. For each, print one line: `S<N>  [<phase>]  <awaiting-or-"-">  <title>`.
 3. If `.signal/tasks/` is empty, say "no active tasks."
 
-### Other operations (Phase 2)
+### Other operations (planned)
 
 `list` (full, including archive), `defer`, `create-deferred`, `promote` (from backlog) are not implemented in Phase 1. Calls return:
 
@@ -60,7 +60,7 @@ If `S<N>` is omitted:
 signal_verdict:
   verdict: awaiting-input
   target: null
-  summary: "signal-task <operation> is planned for Phase 2 and is not yet implemented."
+  summary: "signal-task <operation> is planned and is not yet implemented."
 ```
 
 ## Output Contract
@@ -85,7 +85,7 @@ signal_verdict:
   summary: "Status reported."
 ```
 
-For unimplemented Phase-2 operations, return the `awaiting-input` form above.
+For unimplemented management operations, return the `awaiting-input` form above.
 
 ## Independence
 

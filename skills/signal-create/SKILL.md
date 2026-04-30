@@ -20,7 +20,7 @@ Create or complete task assets. Do not write `task.md` `phase:` or `awaiting:`.
 - task `brief.md`
 - task `compliance.md`
 
-For campaign scope (Phase 2), also read `content-plan.md`. Phase 1 will not reach this branch — `signal-brief` and `signal` block campaign at intake.
+For campaign scope, also read `content-plan.md`. Phase 2 reaches this branch after `signal-plan` and `signal-plan-review` complete.
 
 ## Quick Scope
 
@@ -28,29 +28,20 @@ For campaign scope (Phase 2), also read `content-plan.md`. Phase 1 will not reac
 2. Derive one asset per channel/language/output variant.
 3. Set `asset_type` from channel:
    - `linkedin`, `instagram`, `twitter`, `facebook` -> `social-copy` *(Phase 1 implemented)*
-   - `email` -> `email-copy` *(worker = `signal-copy`, Phase 2)*
-   - `blog` -> `blog` *(worker = `signal-copy`, Phase 2)*
-   - `web` -> `landing-page` *(worker = `signal-copy`, Phase 2)*
-   - otherwise -> `copy` *(worker = `signal-copy`, Phase 2)*
+   - `email` -> `email-copy` *(worker = `signal-copy`, Phase 3)*
+   - `blog` -> `blog` *(worker = `signal-copy`, Phase 3)*
+   - `web` -> `landing-page` *(worker = `signal-copy`, Phase 3)*
+   - otherwise -> `copy` *(worker = `signal-copy`, Phase 3)*
 
    Stamp the correct type even if the worker is not yet implemented; `signal-worker` blocks unsupported types with a clear "worker not yet implemented" message rather than coercing to `social-copy`.
-4. If the derived asset count exceeds `asset_ceiling` (default 3): in **Phase 1** return `awaiting-input` with the campaign-not-implemented message; in **Phase 2** (once `signal-plan` ships) return `redirect target: plan`. Never emit `redirect target: plan` while `signal-plan` is unimplemented — `signal` cannot dispatch into a non-existent skill.
-
-   Phase 1:
-
-   ```yaml
-   signal_verdict:
-     verdict: awaiting-input
-     target: null
-     summary: "Quick brief expanded past the asset ceiling. Campaign scope is Phase 2; not yet implemented. Reduce scope or cancel?"
-   ```
+4. If the derived asset count exceeds `asset_ceiling` (default 3), return `redirect target: plan`. `signal` will treat this as a campaign conversion, set task `scope: campaign`, and dispatch `signal-plan`.
 
 5. Replace every `<TODO>` sentinel in `templates/asset.md` with the resolved value when stamping `A<N>-*.md` files. Required: `id`, `parent`, `title`, `asset_type`, `channel`. A remaining sentinel is a hard error and must be surfaced as `awaiting-input` rather than left in place.
 6. Pin `brand_version` and `product_version` from context files when available.
 7. Set `external_gate: null` unless the brief requires one.
 8. Dispatch eligible assets through `signal-worker` (see `portability.md` § Dispatch Contract). Sequential dispatch is permitted; parallel dispatch requires a sub-agent per asset and disjoint `writes[]`.
 
-## Campaign Scope — Phase 2
+## Campaign Scope
 
 1. Read `content-plan.md`.
 2. Use `asset_plan[]` / table rows as the source of truth.
@@ -95,16 +86,7 @@ signal_verdict:
   summary: "Assets created."
 ```
 
-Asset-ceiling overflow (Phase 1):
-
-```yaml
-signal_verdict:
-  verdict: awaiting-input
-  target: null
-  summary: "Quick brief expanded past the asset ceiling. Campaign scope is Phase 2; not yet implemented."
-```
-
-Asset-ceiling overflow (Phase 2):
+Asset-ceiling overflow:
 
 ```yaml
 signal_verdict:

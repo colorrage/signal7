@@ -13,7 +13,7 @@ Use quick when all are true:
 - no more than three derived assets
 - public content can be produced without a campaign plan
 
-If `signal-create` derives more than three assets from a quick brief, it must return `awaiting-input` (Phase 1) with a clear "campaign scope is planned for Phase 2 and is not implemented yet" message. Once `signal-plan` ships, this becomes a `redirect target: plan`. The `redirect target: plan` form is reserved and must not be emitted while `signal-plan` is unimplemented — `signal` cannot dispatch a phase whose skill does not exist.
+If `signal-create` derives more than three assets from a quick brief, it must return `redirect target: plan`; `signal` converts the task to `scope: campaign` and dispatches `signal-plan`.
 
 ### campaign
 

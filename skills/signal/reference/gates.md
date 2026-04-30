@@ -41,7 +41,7 @@ signal_verdict:
 
 `signal` parses only the final `signal_verdict` block. Human-readable prose above the block is for the user and must not be treated as machine state.
 
-A redirect target must name a phase whose skill is implemented. While `signal-plan` and `signal-plan-review` are unimplemented (Phase 1), no skill may emit `redirect target: plan` or `redirect target: plan-review`. The corresponding Phase 1 fallback for over-ceiling quick scope is `awaiting-input` with a clear "campaign scope is planned for Phase 2" summary.
+A redirect target must name a phase whose skill is implemented. Phase 2 implements `plan` and `plan-review`, so quick-overflow work may now emit `redirect target: plan`.
 
 ## Phase Tables
 
@@ -51,13 +51,13 @@ A redirect target must name a phase whose skill is implemented. While `signal-pl
 brief -> create -> review -> publish -> done
 ```
 
-### campaign — Phase 2 (planned)
+### campaign — Phase 2 (implemented)
 
 ```text
 brief -> plan -> plan-review -> create -> review -> publish -> done
 ```
 
-While Phase 2 is unimplemented, `signal-brief` refuses `scope: campaign` with `awaiting-input` and a clear "Phase 2 not yet implemented" summary. The user can rescope to a single channel/language or accept the brief and stop.
+Campaign scope enters planning after the brief approval gate.
 
 ### strategy — Phase 1 (partial)
 
@@ -77,7 +77,7 @@ The brief and create phases run today, but most strategy `asset_type` values (`r
 | any | phase-complete | clear `awaiting`; advance by scope table |
 | any | redirect | clear `awaiting`; set `phase: target`; dispatch target when safe |
 
-After `signal-brief` returns `phase-complete`, before advancing, `signal` reads `brief.md` `scope` and writes it into `task.md`. If `scope: campaign` and `signal-plan` is not implemented, `signal` reverts the verdict to `awaiting-input` and surfaces a "campaign scope is Phase 2; not yet implemented" message to the user.
+After `signal-brief` returns `phase-complete`, before advancing, `signal` reads `brief.md` `scope` and writes it into `task.md`.
 
 Approval-gated phases advance after approval without an extra checkpoint. Agent-completion phases may stop for a user checkpoint when the phase skill contract says to do so.
 
@@ -115,7 +115,7 @@ Portable wording is "dispatch `signal-plan-review` in an isolated sub-agent cont
 Known redirects:
 
 - `review -> create`: AI review failed or human rejected. `signal-review` flips affected assets to `status: needs-revision` before returning the verdict.
-- `plan-review -> plan`: plan review found fixable flaws. **Phase 2.**
-- `create -> plan`: quick scope expanded past the asset ceiling. **Phase 2.** In Phase 1, this case returns `awaiting-input` instead.
+- `plan-review -> plan`: plan review found fixable flaws.
+- `create -> plan`: quick scope expanded past the asset ceiling. `signal` sets `scope: campaign` before dispatching `signal-plan`.
 
 Redirect targets must be valid phase enum values from `data-model.md` and must name a phase whose skill is implemented at the time the verdict is emitted.

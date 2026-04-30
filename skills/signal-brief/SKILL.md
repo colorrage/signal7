@@ -26,14 +26,11 @@ Turn the user's request into an approved business brief. Do not write any field 
 - On approval re-dispatch, record the user's reply on `brief.md` `## Approval` (`Status: approved` or `Status: rejected — <reason>`) before returning `phase-complete`.
 - Never write `task.md` `phase`, `awaiting`, or `scope`.
 
-## Phase 1 Scope Guards
+## Scope Handling
 
-While Phase 2 (`signal-plan` + `signal-plan-review`) is unimplemented, `signal-brief` must keep `task.md` out of the unreachable `plan` / `plan-review` states.
+Phase 2 implements campaign planning. If triage classifies the request as `campaign`, write `brief.md` with `scope: campaign` and proceed to the normal brief approval gate. After approval, `signal` advances to `plan`.
 
-- If triage classifies the request as `campaign`, set `brief.md` `scope: campaign` and return `awaiting-input` with: *"This looks like a campaign (multi-channel / multi-language / >3 assets / explicit campaign intent). The campaign workflow is planned for Phase 2 and is not implemented yet. I can scope it down to a single channel and language for a quick run today, or capture the brief and stop."* Do not advance.
-- If triage classifies as `quick` or `strategy`, proceed.
-
-`signal` enforces the same guard at the orchestrator level: even if `brief.md` lands with `scope: campaign`, `signal` will re-emit the same blocked message instead of advancing.
+If the request is multi-channel, multi-language, above the quick asset ceiling, or explicitly campaign-shaped, do not downscope it silently. Preserve the campaign scope and let `signal-plan` create `content-plan.md`.
 
 ## Compliance Ownership
 
@@ -74,15 +71,6 @@ signal_verdict:
   verdict: awaiting-input
   target: null
   summary: "Question text here."
-```
-
-When refusing campaign scope (Phase 1 guard):
-
-```yaml
-signal_verdict:
-  verdict: awaiting-input
-  target: null
-  summary: "Campaign scope is Phase 2; not yet implemented. Rescope or cancel?"
 ```
 
 When ready for approval:

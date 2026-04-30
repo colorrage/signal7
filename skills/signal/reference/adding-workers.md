@@ -43,10 +43,10 @@ When `status: needs-revision` is picked up after a `review -> create` redirect, 
 | asset_type | Worker | Status |
 |---|---|---|
 | social-copy | signal-social | **Phase 1 — implemented** |
-| email-copy | signal-copy | Phase 2 — planned |
-| blog | signal-copy | Phase 2 — planned |
-| landing-page | signal-copy | Phase 2 — planned |
-| copy | signal-copy | Phase 2 — planned |
+| email-copy | signal-copy | Phase 3 — planned |
+| blog | signal-copy | Phase 3 — planned |
+| landing-page | signal-copy | Phase 3 — planned |
+| copy | signal-copy | Phase 3 — planned |
 | translation | signal-translate | Phase 3 — planned |
 | image-prompt | signal-image | Phase 3 — planned |
 | video-script | signal-video | Phase 3 — planned |

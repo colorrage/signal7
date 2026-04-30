@@ -16,18 +16,15 @@ Write-side Signal7 skills ensure `.signal/` exists before writing state. Read-si
 
 `archive/` is lazy: bootstrap does not pre-create it. The first archive move (`signal` on phase-driven `done`, or `signal-task` on cancel) runs `mkdir -p .signal/archive` itself.
 
-`recipes/` and `backlog.md` are owned by Phase 2 skills (`signal-recipe`, `signal-backlog`). Until those skills ship, bootstrap creates `backlog.md` as a passive seed file but does not create `recipes/`.
+`recipes/` and `backlog.md` are owned by planned management skills (`signal-recipe`, `signal-backlog`). Until those skills ship, bootstrap creates `backlog.md` as a passive seed file but does not create `recipes/`.
 
 Bootstrap copies these templates into `.signal/context/` when missing:
 
 - `skills/signal/templates/context-brand.md` -> `.signal/context/brand.md`
 - `skills/signal/templates/context-product.md` -> `.signal/context/product.md`
 - `skills/signal/templates/context-approved-claims.md` -> `.signal/context/approved-claims.md`
-
-Phase 2 adds optional templates for:
-
-- `competitors.md`
-- `past-campaigns.md`
+- `skills/signal/templates/context-competitors.md` -> `.signal/context/competitors.md`
+- `skills/signal/templates/context-past-campaigns.md` -> `.signal/context/past-campaigns.md`
 
 ## config.yaml
 
@@ -51,7 +48,7 @@ external_status:
   adapters: []
 ```
 
-`enabled_channels` lists only the channels Signal7 can produce content for in Phase 1. `email`, `blog`, and `web` are omitted from the seeded list because the workers behind them are Phase 2/3. They remain valid `asset_type` / `channel` values in `data-model.md` so once `signal-copy` ships, simply re-adding them to `config.yaml` enables those flows.
+`enabled_channels` lists only the channels Signal7 can produce content for today. `email`, `blog`, and `web` are omitted from the seeded list because the workers behind them are Phase 3. They remain valid `asset_type` / `channel` values in `data-model.md` so once `signal-copy` ships, simply re-adding them to `config.yaml` enables those flows.
 
 `publish_rate_limits.on_limit: defer` means `signal-publish` records a `blocked-rate-limit` entry and surfaces `awaiting-input` to the user; the user can rerun later (manual defer). `on_limit: block` means the publish phase fails the asset outright. `defer` is the default and recommended behaviour. See `signal-publish` for the precise rule.
 
@@ -73,8 +70,8 @@ These skills ensure `.signal/` exists before writing:
 
 - `signal`
 - `signal-publish` — writes `publish-log.md` per task; bootstraps any missing top-level shape
-- `signal-task` — `cancel` (Phase 1) and, when shipped, `defer` and `create-deferred` (Phase 2)
-- Phase 2 add: `signal-backlog` add/promote/drop, `signal-recipe` create/update/delete
+- `signal-task` — `cancel` (Phase 1) and, when shipped, `defer` and `create-deferred`
+- Planned management skills: `signal-backlog` add/promote/drop, `signal-recipe` create/update/delete
 
 ## Read-side Skills
 

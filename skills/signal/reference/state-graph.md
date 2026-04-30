@@ -11,9 +11,9 @@ brief -> create -> review -> publish -> done
 Redirects:
 
 - `review -> create` when AI review fails or a human rejects. `signal-review` flips affected assets to `status: needs-revision` before redirecting; `signal-create` increments `revision` and dispatches the worker again.
-- `create -> plan` (Phase 2 only) when derived asset count exceeds 3. In Phase 1 this case returns `awaiting-input` instead — no `plan` skill exists yet to dispatch into.
+- `create -> plan` when derived asset count exceeds 3. `signal` converts task `scope` to `campaign` before dispatching `signal-plan`.
 
-## campaign — Phase 2 (planned)
+## campaign — Phase 2 (implemented)
 
 ```text
 brief -> plan -> plan-review -> create -> review -> publish -> done
@@ -25,8 +25,6 @@ Redirects:
 - `review -> create` when asset review fails (same flip rule as quick).
 
 `plan-review` must run in a fresh sub-agent context.
-
-While Phase 2 is unimplemented, `signal-brief` refuses `scope: campaign` at intake with `awaiting-input` and a "Phase 2 not yet implemented" summary.
 
 ## strategy — Phase 1 (partial)
 

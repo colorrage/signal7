@@ -2,7 +2,7 @@
 
 This is the source of truth for `.signal/` state, task artifacts, asset files, and shared schemas. Signal7 skills must prefer these field names and enum values over local inventions.
 
-> **Phase status.** Some shapes documented here describe contracts for skills that are planned but not yet implemented (`signal-plan`, `signal-backlog`, `signal-recipe`, additional workers). Those sections are marked **Phase 2/3 — planned**. README § Status is the source of truth for what is shipped today.
+> **Phase status.** Campaign planning (`signal-plan`, `signal-plan-review`) is implemented. Some shapes documented here describe contracts for skills that are planned but not yet implemented (`signal-backlog`, `signal-recipe`, additional workers). Those sections are marked **planned**. README § Status is the source of truth for what is shipped today.
 
 ## State Root
 
@@ -16,8 +16,8 @@ Project state lives under `.signal/` in the user's project, not inside the Signa
       dashboard.md
       brief.md
       compliance.md
-      content-plan.md           # Phase 2 — planned
-      plan-review.md            # Phase 2 — planned
+      content-plan.md
+      plan-review.md
       review.md
       publish-log.md
       prompts/                  # created lazily by the first worker
@@ -27,11 +27,11 @@ Project state lives under `.signal/` in the user's project, not inside the Signa
   context/
     brand.md
     product.md
-    competitors.md              # Phase 2 — planned
-    past-campaigns.md           # Phase 2 — planned
+    competitors.md
+    past-campaigns.md
     approved-claims.md
-  recipes/                      # Phase 2 — planned (signal-recipe)
-  backlog.md                    # Phase 2 — planned (signal-backlog)
+  recipes/                      # planned (signal-recipe)
+  backlog.md                    # planned (signal-backlog)
   config.yaml
 ```
 
@@ -52,7 +52,7 @@ awaiting: null | user-input | user-approval
 
 `signal` (and `signal-task` for explicit cancel/defer) own every mutation of `phase`, `awaiting`, and `scope`. Phase skills do not write any top-level `task.md` field. The previous architectural exception — `signal-brief` writing `scope` directly — has been removed; `signal` now mirrors `scope` from `brief.md` after `signal-brief` returns `phase-complete`.
 
-The `plan` and `plan-review` phase values appear in the enum because the data model describes the eventual contract. They are not reachable in Phase 1 — `signal` refuses to advance into them while their phase skills are unimplemented.
+The `plan` and `plan-review` phase values are reachable for campaign scope.
 
 ## Asset IDs
 
@@ -159,7 +159,7 @@ asset_ceiling: 3
 
 `signal-brief` must replace the `<TODO>` sentinel on `scope` and the empty `objective` / `audience` strings before returning `phase-complete`. `signal` mirrors the resolved `scope` into `task.md` after the brief is approved; `signal-brief` does not write `task.md`.
 
-For quick scope, the normalized brief must describe one channel, one language, and no more than three derived assets. If later derivation exceeds that ceiling, `signal-create` returns `awaiting-input` (Phase 1) or `redirect target: plan` (once `signal-plan` ships in Phase 2).
+For quick scope, the normalized brief must describe one channel, one language, and no more than three derived assets. If later derivation exceeds that ceiling, `signal-create` returns `redirect target: plan` and `signal` converts the task to campaign scope.
 
 `signal-brief` also creates `compliance.md` for every task. The template default is non-regulated; `signal-brief` raises to `questions-open` only when triage detects a regulated domain.
 
@@ -188,9 +188,9 @@ Required sections:
 
 `signal-review` must fail or block public assets when `compliance.md` has `status: questions-open` or `status: blocked`. It returns the dedicated `awaiting-input` verdict (not `redirect`) for compliance blockers — there is no asset content to redirect.
 
-## content-plan.md — Phase 2 — planned
+## content-plan.md
 
-Owned by `signal-plan`; read by `signal-plan-review` and `signal-create`. Not produced in Phase 1.
+Owned by `signal-plan`; read by `signal-plan-review` and `signal-create`.
 
 ```yaml
 ---
@@ -309,7 +309,7 @@ expires_at: null
 jurisdictions: []
 ```
 
-## backlog.md — Phase 2 — planned
+## backlog.md — planned
 
 Owned by `signal-backlog` (not yet implemented). Until `signal-backlog` ships, `.signal/backlog.md` is a passive markdown file users may write into manually but no Signal7 skill consumes.
 

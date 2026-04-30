@@ -47,17 +47,17 @@ If the user replies to an open gate, clear `awaiting`, dispatch the current phas
 | phase | Skill | Status |
 |---|---|---|
 | brief | signal-brief | implemented |
+| plan | signal-plan | implemented |
+| plan-review | signal-plan-review | implemented |
 | create | signal-create | implemented |
 | review | signal-review | implemented |
 | publish | signal-publish | implemented |
-| plan | signal-plan | **Phase 2 — not yet implemented** |
-| plan-review | signal-plan-review | **Phase 2 — not yet implemented** |
 
-Dispatch mode for every phase skill is in `portability.md` § Dispatch Contract. `signal-plan-review` (Phase 2) must run in a fresh sub-agent context; everything else is inline today.
+Dispatch mode for every phase skill is in `portability.md` § Dispatch Contract. `signal-plan-review` must run in a fresh sub-agent context; everything else is inline today.
 
-If `task.md` reaches `phase: plan` or `phase: plan-review` while their skills are unimplemented (e.g. via a stale state file), `signal` does not attempt to dispatch. It surfaces a clear blocked message — "Phase 2 is not yet implemented. Cancel this task with `/signal-task cancel S<N>` or wait for `signal-plan` to ship." — and stops.
+Phase 2 implements campaign planning and plan review. Campaigns that rely on workers not yet implemented (email, blog, web, translation, research, pricing) may still block later in `signal-worker`; planning should still preserve the correct asset type.
 
-Phase 1 implements `brief`, `create`, `review`, and `publish` for quick scope. Strategy `brief` runs but most strategy `asset_type` workers are Phase 3.
+Strategy `brief` runs but most strategy `asset_type` workers are Phase 3.
 
 ## Verdict Handling
 
@@ -71,7 +71,9 @@ Apply `gates.md` exactly:
 - `phase-complete` -> clear awaiting and advance by scope table
 - `redirect` -> clear awaiting, set phase to target, dispatch when safe
 
-Before advancing past `signal-brief`'s `phase-complete`, read `brief.md` `scope` and write it into `task.md`. If `scope: campaign` and `signal-plan` is not implemented, do not advance — set `awaiting: user-input` and surface a "campaign scope is Phase 2; not yet implemented. Rescope to a single channel/language or cancel?" message.
+Before advancing past `signal-brief`'s `phase-complete`, read `brief.md` `scope` and write it into `task.md`.
+
+On `redirect target: plan` from `signal-create`, set task `scope: campaign` before dispatching `signal-plan`. This is the quick-overflow conversion path.
 
 Reject any `redirect` whose target names an unimplemented phase. Treat it as `awaiting-input` with an explanation.
 

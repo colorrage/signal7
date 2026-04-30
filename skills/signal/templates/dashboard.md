@@ -26,8 +26,7 @@ _not yet written_
 
 ## Status
 
-Phase: <phase>
-Awaiting: <awaiting>
+Phase: <TODO: filled by signal on each rollup>
+Awaiting: <TODO: filled by signal on each rollup>
 
 ## Decisions
-

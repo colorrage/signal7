@@ -13,7 +13,7 @@ Use quick when all are true:
 - no more than three derived assets
 - public content can be produced without a campaign plan
 
-If `signal-create` derives more than three assets from a quick brief, it must return a redirect verdict with `target: plan`.
+If `signal-create` derives more than three assets from a quick brief, it must return `awaiting-input` (Phase 1) with a clear "campaign scope is planned for Phase 2 and is not implemented yet" message. Once `signal-plan` ships, this becomes a `redirect target: plan`. The `redirect target: plan` form is reserved and must not be emitted while `signal-plan` is unimplemented — `signal` cannot dispatch a phase whose skill does not exist.
 
 ### campaign
 
@@ -42,7 +42,7 @@ Use strategy when there is no immediate public deliverable, for example competit
 | Make a blog post and email announcement | campaign | multiple asset types/channels |
 | Research competitors for our product | strategy | internal recommendation, no public deliverable |
 | Recommend pricing tiers | strategy | internal recommendation, no public deliverable |
-| Create a regulated single social post | quick or campaign | quick if one channel/language/<=3 assets, but compliance.md is required |
+| Create a regulated single social post | quick (compliance.md raised to `questions-open`) | one channel + one language + ≤3 assets is always quick; the regulated flag affects `compliance.md`, not scope |
 
 ## Clarification Rule
 

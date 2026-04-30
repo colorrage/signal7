@@ -2,6 +2,8 @@
 
 This is the source of truth for `.signal/` state, task artifacts, asset files, and shared schemas. Signal7 skills must prefer these field names and enum values over local inventions.
 
+> **Phase status.** Some shapes documented here describe contracts for skills that are planned but not yet implemented (`signal-plan`, `signal-backlog`, `signal-recipe`, additional workers). Those sections are marked **Phase 2/3 — planned**. README § Status is the source of truth for what is shipped today.
+
 ## State Root
 
 Project state lives under `.signal/` in the user's project, not inside the Signal7 skill repo.
@@ -14,22 +16,22 @@ Project state lives under `.signal/` in the user's project, not inside the Signa
       dashboard.md
       brief.md
       compliance.md
-      content-plan.md
-      plan-review.md
+      content-plan.md           # Phase 2 — planned
+      plan-review.md            # Phase 2 — planned
       review.md
       publish-log.md
-      prompts/
+      prompts/                  # created lazily by the first worker
         A<N>-r<revision>-<worker>.md
       A<N>-<slug>.md
   archive/
   context/
     brand.md
     product.md
-    competitors.md
-    past-campaigns.md
+    competitors.md              # Phase 2 — planned
+    past-campaigns.md           # Phase 2 — planned
     approved-claims.md
-  recipes/
-  backlog.md
+  recipes/                      # Phase 2 — planned (signal-recipe)
+  backlog.md                    # Phase 2 — planned (signal-backlog)
   config.yaml
 ```
 
@@ -48,7 +50,9 @@ awaiting: null | user-input | user-approval
 ---
 ```
 
-The `signal` orchestrator owns `phase` and `awaiting`. Phase skills may write classification fields such as `scope`, but do not mutate `phase` or `awaiting`.
+`signal` (and `signal-task` for explicit cancel/defer) own every mutation of `phase`, `awaiting`, and `scope`. Phase skills do not write any top-level `task.md` field. The previous architectural exception — `signal-brief` writing `scope` directly — has been removed; `signal` now mirrors `scope` from `brief.md` after `signal-brief` returns `phase-complete`.
+
+The `plan` and `plan-review` phase values appear in the enum because the data model describes the eventual contract. They are not reachable in Phase 1 — `signal` refuses to advance into them while their phase skills are unimplemented.
 
 ## Asset IDs
 
@@ -69,7 +73,7 @@ Publish idempotency keys must include `task_id` so task-scoped asset ids cannot 
 id: A<N>
 parent: S<N>
 title: Asset title
-status: todo | in-progress | done | blocked | cancelled
+status: todo | needs-revision | in-progress | done | blocked | cancelled
 cancelled_reason: null
 asset_type: social-copy | email-copy | blog | landing-page | copy | image-prompt | video-script | translation | research | pricing
 channel: linkedin | instagram | twitter | facebook | email | blog | web | internal | none
@@ -91,6 +95,17 @@ generation_log: []
 ---
 ```
 
+`status` values:
+
+- `todo` — not yet started.
+- `in-progress` — a worker is generating content.
+- `done` — content generated; awaiting review or already approved.
+- `needs-revision` — `signal-review` flagged this asset as failing the AI rubric or rejected by a human; `signal-create` will pick it up on redirect, increment `revision`, and dispatch a worker again. Set by `signal-review` only.
+- `blocked` — a worker reported it could not produce this asset (missing context, unsupported asset type in current phase). Surfaced to the user via `awaiting-input`.
+- `cancelled` — kept on disk after a re-plan removed the asset. Never deleted; downstream dependents must treat it as blocking.
+
+Templates ship with `<TODO>` sentinels for `id`, `parent`, `title`, `asset_type`, and `channel`. `signal-create` must replace every sentinel before returning `phase-complete`. A remaining sentinel is a hard error, not a default.
+
 `external_gate` is either `null` or:
 
 ```yaml
@@ -104,7 +119,7 @@ checked_at: null
 
 If `external_gate` is `null`, `signal-publish` skips the gate check. If `status` is `satisfied` or `waived`, publishing may proceed. Any other status blocks that asset.
 
-`depends` contains same-task asset IDs only, for example `["A1", "A2"]`. A dependency is met only when every referenced asset has `status: done`. `blocked` or `cancelled` dependencies block dependents. Translation assets also require the `source_asset` to have `review_ai_pass: true`.
+`depends` contains same-task asset IDs only, for example `["A1", "A2"]`. A dependency is met only when every referenced asset has `status: done`. `blocked`, `needs-revision`, or `cancelled` dependencies block dependents. Translation assets also require the `source_asset` to have `review_ai_pass: true` *and* `status: done`.
 
 `generation_log` is append-only by convention:
 
@@ -118,6 +133,8 @@ If `external_gate` is `null`, `signal-publish` skips the gate check. If `status`
   content_hash: sha256:<hex>
 ```
 
+`worker_version` is read from the worker's own `SKILL.md` frontmatter (`worker_version: <int>`). If the worker omits the field, treat it as `1`. Workers must increment when generation behaviour changes in a way downstream review or replay should distinguish.
+
 The prompt hash is an integrity check for the stored prompt; it is not a substitute for prompt storage.
 
 `content_hash` is the SHA-256 hash of the exact text under the asset `## Content` section after generation. `signal-publish` reads it from the latest generation log entry. If absent, publish computes it from `## Content` and records the value before calculating the publish idempotency key.
@@ -128,21 +145,23 @@ Owned by `signal-brief`.
 
 ```yaml
 ---
-scope: quick | campaign | strategy
+scope: <TODO> | quick | campaign | strategy
 objective: ""
 audience: ""
 channels: []
 languages: []
 tone_by_channel: {}
 approved_claims_required: false
-regulated_domain: unknown | false | true
+regulated_domain: false
 asset_ceiling: 3
 ---
 ```
 
-For quick scope, the normalized brief must describe one channel, one language, and no more than three derived assets. If later derivation exceeds that ceiling, `signal-create` redirects to `plan`.
+`signal-brief` must replace the `<TODO>` sentinel on `scope` and the empty `objective` / `audience` strings before returning `phase-complete`. `signal` mirrors the resolved `scope` into `task.md` after the brief is approved; `signal-brief` does not write `task.md`.
 
-`signal-brief` also creates `compliance.md` for every task. For non-regulated tasks it records `regulated_domain: false` and an empty pre-check; for regulated or uncertain tasks it records the questions and required checks before review.
+For quick scope, the normalized brief must describe one channel, one language, and no more than three derived assets. If later derivation exceeds that ceiling, `signal-create` returns `awaiting-input` (Phase 1) or `redirect target: plan` (once `signal-plan` ships in Phase 2).
+
+`signal-brief` also creates `compliance.md` for every task. The template default is non-regulated; `signal-brief` raises to `questions-open` only when triage detects a regulated domain.
 
 ## compliance.md
 
@@ -150,12 +169,14 @@ Owned by `signal-brief`; read by `signal-review`.
 
 ```yaml
 ---
-regulated_domain: unknown | false | true
+regulated_domain: false | true | unknown
 jurisdictions: []
 approved_claims_required: false
 status: clear | questions-open | blocked
 ---
 ```
+
+Default state is `regulated_domain: false`, `status: clear`. `signal-brief` raises to `regulated_domain: true` (or `unknown`) and `status: questions-open` when triage detects a regulated domain (healthcare, finance, legal, children's products, privacy, regulated advertising, evidence-backed claims, jurisdiction-specific restrictions). The default flipped from `questions-open` to `clear` to prevent silent halts in `signal-review` when `signal-brief` forgot to write a non-regulated answer.
 
 Required sections:
 
@@ -165,11 +186,11 @@ Required sections:
 - `## Jurisdiction Notes`
 - `## Open Questions`
 
-`signal-review` must fail or block public assets when `compliance.md` has `status: questions-open` or `status: blocked`.
+`signal-review` must fail or block public assets when `compliance.md` has `status: questions-open` or `status: blocked`. It returns the dedicated `awaiting-input` verdict (not `redirect`) for compliance blockers — there is no asset content to redirect.
 
-## content-plan.md
+## content-plan.md — Phase 2 — planned
 
-Owned by `signal-plan`; read by `signal-plan-review` and `signal-create`.
+Owned by `signal-plan`; read by `signal-plan-review` and `signal-create`. Not produced in Phase 1.
 
 ```yaml
 ---
@@ -215,10 +236,18 @@ Per-approver schema:
   auto_approve_on_timeout: false
   status: pending
   comment: null
+  rejected_reason: null
   updated_at: null
+  recorded_response: null
 ```
 
+`recorded_response` captures the literal user reply that drove the most recent state change (`approve`, `reject: <reason>`, or a paste-in delegate decision). `signal-review` writes it on redispatch when it observes a state change driven by user input — the orchestrator sets `awaiting`, `signal-review` materialises the answer in `review.md` so the artifact is the durable record, not just `task.md` `awaiting`.
+
+`rejected_reason` populates from the user's `reject: <reason>` reply or from a delegate's recorded reason.
+
 If timeout expires and `auto_approve_on_timeout` is `false`, set `status: escalated`, name the delegate or owner in the summary, and keep the approval gate open.
+
+When `signal-review` records a `rejected` row (AI rubric fail or human rejection), it must also flip the affected asset's `status` from `done` to `needs-revision` and increment `revision` on the next worker dispatch in `signal-create`. Without this status flip, `signal-create` skips the asset on redirect and the rework loop spins.
 
 ## publish-log.md
 
@@ -232,15 +261,28 @@ Append-only ledger owned by `signal-publish`.
   publish_at: YYYY-MM-DDTHH:MM:SS
   actual_publish_time: YYYY-MM-DDTHH:MM:SS
   idempotency_key: sha256:<hex>
-  status: published | skipped-duplicate | blocked-expired | blocked-external-gate | failed
+  status: published | skipped-duplicate | blocked-expired | blocked-external-gate | blocked-rate-limit | failed
   message: ""
 ```
 
-Idempotency key input:
+Status values:
+
+- `published` — entry appended successfully.
+- `skipped-duplicate` — idempotency key matched a prior entry; nothing appended.
+- `blocked-expired` — `expires_at` is in the past.
+- `blocked-external-gate` — `external_gate.status` is not `satisfied`/`waived`.
+- `blocked-rate-limit` — `publish_rate_limits` reached for this channel or globally; the asset was deferred. See `signal-publish` for the defer-vs-block rule.
+- `failed` — terminal error during ledger write.
+
+### Idempotency key
 
 ```text
 task_id + asset_id + channel + publish_at + content_hash
 ```
+
+`publish_at` participates as either a non-empty timestamp string (`YYYY-MM-DDTHH:MM:SS`) or the literal token `null` when `publish_at` was unset at publish time. The token form is intentional: it makes the key stable across writes that filled `publish_at` in later. If a task wants its eventual `publish_at` value to influence the key, it must set `publish_at` *before* publishing — a later edit does not retroactively change the published key.
+
+`signal-publish` reads existing publish-log entries written under earlier rules without modification; only new writes follow the rule above.
 
 ## Context Files
 
@@ -267,7 +309,9 @@ expires_at: null
 jurisdictions: []
 ```
 
-## backlog.md
+## backlog.md — Phase 2 — planned
+
+Owned by `signal-backlog` (not yet implemented). Until `signal-backlog` ships, `.signal/backlog.md` is a passive markdown file users may write into manually but no Signal7 skill consumes.
 
 Entries use `B<N>` ids:
 

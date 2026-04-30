@@ -6,9 +6,13 @@ Signal7 handles public business content, so compliance and audit trails are firs
 
 `signal-brief` creates `compliance.md` for every task.
 
-- Non-regulated tasks: set `regulated_domain: false` and `status: clear`.
-- Regulated or uncertain tasks: set `regulated_domain: true` or `unknown`, record questions, and keep `status: questions-open` until resolved.
+The template default (`regulated_domain: false`, `status: clear`) is the safe non-regulated baseline. `signal-brief` raises it explicitly during triage:
+
+- Non-regulated tasks: leave the template defaults (`regulated_domain: false`, `status: clear`). No further work needed.
+- Regulated or uncertain tasks: set `regulated_domain: true` (or `unknown`), record questions, and raise to `status: questions-open` until resolved.
 - Blocked tasks: set `status: blocked` and explain why.
+
+The default flipped from `questions-open` to `clear` because the previous default produced silent halts in `signal-review` whenever `signal-brief` forgot to write a non-regulated answer. `signal-brief` is now responsible for explicitly *raising* the status when triage detects regulated content; absence of a raise means non-regulated.
 
 `signal-review` reads `compliance.md` before approving public assets. It must not approve when compliance status is `questions-open` or `blocked`.
 
@@ -33,6 +37,8 @@ Every worker stores prompts under the task root:
 prompts/A<N>-r<revision>-<worker>.md
 ```
 
+`prompts/` is created lazily by the first worker that writes into it. No phase skill, orchestrator, or bootstrap step pre-creates the directory — workers `mkdir -p prompts` (or the host equivalent) before writing.
+
 The asset `generation_log` stores both:
 
 ```yaml
@@ -41,6 +47,12 @@ prompt_hash: sha256:<hex>
 ```
 
 The hash proves integrity of the stored prompt. It is not traceability by itself.
+
+## Worker Version
+
+`generation_log` entries record `worker_version: <int>`. The value comes from a `worker_version: <int>` field in the worker's own `SKILL.md` frontmatter. Workers must increment this field when their generation behaviour changes in a way that downstream review or replay should distinguish.
+
+If a worker omits `worker_version` from its frontmatter, treat it as `worker_version: 1` for log purposes.
 
 ## Generation Log
 

@@ -1,11 +1,11 @@
 ---
-id: A<N>
-parent: S<N>
-title: <title>
+id: <TODO>
+parent: <TODO>
+title: <TODO>
 status: todo
 cancelled_reason: null
-asset_type: social-copy
-channel: none
+asset_type: <TODO>
+channel: <TODO>
 language: en
 source_asset: null
 depends: []
@@ -23,7 +23,7 @@ usage_rights: null
 generation_log: []
 ---
 
-# <title>
+# <TODO: title>
 
 ## Content
 

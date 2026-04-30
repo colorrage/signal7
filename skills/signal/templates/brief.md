@@ -1,12 +1,12 @@
 ---
-scope: unknown
-objective: ""
-audience: ""
+scope: <TODO: quick | campaign | strategy>
+objective: <TODO>
+audience: <TODO>
 channels: []
 languages: []
 tone_by_channel: {}
 approved_claims_required: false
-regulated_domain: unknown
+regulated_domain: false
 asset_ceiling: 3
 ---
 
@@ -35,4 +35,3 @@ _not yet written_
 ## Approval
 
 Status: pending
-

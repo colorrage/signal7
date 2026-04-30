@@ -36,9 +36,9 @@ Start from step 2 but stop at the review approval gate (`awaiting: user-approval
 - [ ] Orchestrator applies the redirect; `task.md` shows `phase: create`
 - [ ] System awaits the next asset completion — no infinite loop
 
-## 4. Campaign planning
+## 4. Campaign planning happy path
 
-Run `/signal Create a campaign for Instagram + LinkedIn`
+**Campaign planning happy path.** Run `/signal create a multi-channel campaign` with 2 channels and 1 language. Verify signal-brief accepts campaign scope, signal-plan generates content-plan.md with correct asset stubs, signal-plan-review passes, and the campaign moves through create → review → publish → done.
 
 - [ ] `signal-brief` writes `brief.md` with `scope: campaign`
 - [ ] After brief approval, `signal-plan` writes `content-plan.md`

@@ -21,6 +21,8 @@
 - **T2.4** — replay-fixture.sh harness (verdict replay, mutation diff, retry, lenient/strict) → [T2.4-replay-fixture-harness.md](T2.4-replay-fixture-harness.md)
 - **T2.5** — run-all-fixtures.sh batch runner + evals/qa-checklist.md → [T2.5-run-all-qa-checklist.md](T2.5-run-all-qa-checklist.md)
 - **T2.6** — Update evals README and repo README → [T2.6-update-readmes.md](T2.6-update-readmes.md)
+- **T2.7** — Phase 2 QA fixtures — campaign plan, plan-review rework, multi-asset create → [T2.7-phase-2-fixtures.md](T2.7-phase-2-fixtures.md)
+- **T2.8** — Remove stale campaign-blocked-at-intake fixture + update QA checklist → [T2.8-remove-stale-fixture-checklist.md](T2.8-remove-stale-fixture-checklist.md)
 
 ## Out of scope
 

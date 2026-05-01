@@ -41,30 +41,38 @@ Signal7 mirrors Hyper7's architecture: disk-based state (`.signal/` folder), gat
 |-------|------|----------|--------|
 | `quick` | brief → create → review → publish → done | Single content piece | **Implemented (Phase 1)** |
 | `campaign` | brief → plan → plan-review → create → review → publish → done | Multi-channel campaign | **Implemented (Phase 2 planning + review)** |
-| `strategy` | brief → create → done | Research + recommendation only | Partial — quick-style brief works; strategy-specific workers are Phase 3 |
+| `strategy` | brief → create → done | Research + recommendation only | **Implemented (Phase 3)** — `signal-research` and `signal-price` workers ship; review/publish are skipped unless output becomes public content |
 
 `recurring` work (e.g. "every Monday, 3 LinkedIn posts") is out of v1; it will arrive as a recipe/automation, not as a scope.
 
 ## Status
 
-**What is implemented today (Phase 0-2):**
+**What is implemented today (Phase 0-3):**
 
 - The `quick` scope, end-to-end: brief → create → review → publish → done
 - The `campaign` planning path: brief → plan → plan-review → create → review → publish → done
-- One content worker: `signal-social` (LinkedIn, Instagram, X/Twitter, Facebook copy)
+- The `strategy` scope: brief → create → done, dispatching `signal-research` or `signal-price`
+- All content workers wired up:
+  - `signal-social` — LinkedIn, Instagram, X/Twitter, Facebook copy (Phase 1)
+  - `signal-copy` — email, blog, landing page, generic long-form copy (Phase 3)
+  - `signal-image` — text-to-image prompts for Midjourney / DALL-E / Canva (Phase 3)
+  - `signal-video` — scene-by-scene video scripts for RunwayML / HeyGen / Sora (Phase 3)
+  - `signal-translate` — locale translation gated on source `review_ai_pass: true` (Phase 3)
+  - `signal-research` — competitor / market analysis from `competitors.md` + `past-campaigns.md` + `product.md` (Phase 3)
+  - `signal-price` — market- and jurisdiction-aware pricing recommendations from `product.md` + `competitors.md` (Phase 3)
 - Campaign planning skills: `signal-plan` and isolated-context `signal-plan-review`
 - The `signal` orchestrator, the foundation reference docs, and the asset/brief/compliance schemas
 - Disk-based state (`.signal/`), idempotent publish ledger, AI review rubric, prompt storage with hashes
 - A three-layer QA testing system: Layer 1 static checks (`scripts/run-signal-fixtures.sh`), Layer 2 live-skill replay (`scripts/replay-fixture.sh` / `scripts/run-all-fixtures.sh`), and Layer 3 manual pre-ship checklist (`evals/qa-checklist.md`). See `evals/signal-fixtures/README.md` for the full documentation.
 - A minimal `signal-task` skill with two operations: `cancel` and `status`
 
-**What is planned but not implemented (Phase 3+):**
+**What is planned but not implemented (Phase 4+):**
 
-- All other content workers: `signal-copy` (email/blog/long-form), `signal-image`, `signal-video`, `signal-translate`, `signal-research`, `signal-price`
 - The full management surface: `signal-backlog`, `signal-recipe`, `signal-handoff`, `signal-retro`, `signal-team`
 - Beyond cancel/status, all `signal-task` operations (list, defer, create-deferred)
+- Real channel adapters (LinkedIn, Meta, email tools, CMS) — today's `publish-log.md` is on-disk only
 
-If you ask Signal7 today for a social campaign, it can plan/review/create/publish ledger entries using `signal-social`. If the campaign includes email, blog, web, translation, image, video, research, or pricing assets, Signal7 preserves the correct asset type and blocks at worker dispatch with a clear "worker not yet implemented" message. The scope guards are deliberate, not a bug.
+Signal7 today supports campaigns that mix social, long-form, image, video, translation, research, and pricing assets. Worker dispatch will only block if the asset uses a type that is not in the routing table at all.
 
 The `Status` section in this README is the source of truth for what is shipped. Individual `SKILL.md` files describe behaviour. `data-model.md`, `gates.md`, and the other reference docs describe the eventual contract — anything they describe that is not yet listed above as "implemented" should be read as future work.
 
@@ -79,13 +87,11 @@ The `Status` section in this README is the source of truth for what is shipped. 
 
 **Implemented internal skills (not user-invocable):**
 
-`signal-brief`, `signal-plan`, `signal-plan-review`, `signal-create`, `signal-review`, `signal-publish`, `signal-worker`, `signal-social`.
+`signal-brief`, `signal-plan`, `signal-plan-review`, `signal-create`, `signal-review`, `signal-publish`, `signal-worker`, `signal-social`, `signal-copy`, `signal-image`, `signal-video`, `signal-translate`, `signal-research`, `signal-price`.
 
 **Planned (placeholders may exist; will refuse with a clear message until shipped):**
 
 User-facing: `signal-backlog`, `signal-recipe`, `signal-handoff`, `signal-retro`, `signal-team`.
-
-Content workers: `signal-copy`, `signal-image`, `signal-video`, `signal-translate`, `signal-research`, `signal-price`.
 
 ---
 
@@ -113,7 +119,11 @@ For a single LinkedIn / Instagram / X / Facebook post. One channel, one language
 
 ### Campaign workflows
 
-Campaigns now run through `brief -> plan -> plan-review -> create -> review -> publish`. The implemented worker surface is still social copy, so campaigns using LinkedIn / Instagram / X / Facebook are the safest path today. Other channels are planned accurately but block until their workers ship.
+Campaigns run through `brief -> plan -> plan-review -> create -> review -> publish`. The full Phase 3 worker surface is wired up, so a campaign can mix social posts, long-form copy (email / blog / landing page), image prompts, video scripts, translations, research artifacts, and pricing memos in a single content plan.
+
+### Strategy workflows
+
+Strategy tasks (research-only or pricing-only) run through `brief -> create -> done` and dispatch `signal-research` and/or `signal-price`. Review and publish are skipped — the artifact is internal. If you later turn the output into public content, route a follow-up task through `signal-copy` or `signal-social`, where claims compliance is enforced.
 
 ### Managing tasks (today)
 
@@ -160,21 +170,21 @@ Signal7: Resuming S2 — quick LinkedIn post for Q1 results. Currently in review
 **Campaign example**
 ```
 You: /signal Launch campaign for our new mobile app on Instagram + LinkedIn + email
-Signal7: [writes brief, then content-plan.md] The Instagram and LinkedIn assets can be created with signal-social. The email asset is planned as email-copy and will block until signal-copy ships.
+Signal7: [writes brief, then content-plan.md] Instagram and LinkedIn assets dispatch to signal-social; the email asset dispatches to signal-copy.
 ```
 
 ```
 You: /signal Translate our launch post into French and German
-Signal7: That requires dependency-aware translation. Translation worker is planned for Phase 3 and is not implemented yet.
+Signal7: [stamps two translation assets with source_asset pointing at the English source; signal-create gates dispatch on source review_ai_pass]
 ```
 
 ```
 You: /signal Write a 500-word blog post on remote work
-Signal7: Blog (long-form copy) requires the signal-copy worker, which is planned for Phase 3. I can produce a LinkedIn / Instagram / X / Facebook post on the same topic today.
+Signal7: [stamps a blog asset; signal-copy generates the long-form draft, signal-review runs claims and brand checks, you approve and publish]
 ```
 
 ---
 
 ## When the rest will land
 
-The implementation order from here is: Phase 3 (additional workers — `signal-copy` first, then image/video/translate/research) → Phase 4+ (management skills, channel adapters, performance feedback, multi-stakeholder approval routing, recurring/recipes). See `.hyper/tasks/` in this repo or the impl-plan archived in the parent Hyper repo for the rolling plan.
+The implementation order from here is: Phase 4 (management skills — backlog / recipe / handoff / retro / team, plus the rest of `signal-task`), then real channel adapters, performance feedback, multi-stakeholder approval routing, and recurring/recipe automation. See `.hyper/tasks/` in this repo or the impl-plan archived in the parent Hyper repo for the rolling plan.

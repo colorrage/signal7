@@ -2,7 +2,7 @@
 
 This is the source of truth for `.signal/` state, task artifacts, asset files, and shared schemas. Signal7 skills must prefer these field names and enum values over local inventions.
 
-> **Phase status.** Campaign planning (`signal-plan`, `signal-plan-review`) is implemented. Some shapes documented here describe contracts for skills that are planned but not yet implemented (`signal-backlog`, `signal-recipe`, additional workers). Those sections are marked **planned**. README § Status is the source of truth for what is shipped today.
+> **Phase status.** Phase 0–3 are implemented: foundation, quick scope, campaign planning + plan-review, and the full content worker surface (`signal-social`, `signal-copy`, `signal-image`, `signal-video`, `signal-translate`, `signal-research`, `signal-price`). Some shapes documented here describe contracts for skills that are still planned (`signal-backlog`, `signal-recipe`, the rest of `signal-task`). Those sections are marked **planned**. README § Status is the source of truth for what is shipped today.
 
 ## State Root
 

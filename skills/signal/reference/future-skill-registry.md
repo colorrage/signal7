@@ -31,18 +31,23 @@ Do not create a Phase 0 placeholder for `signal-price`. Phase 3 either implement
 | signal-team | Dispatch a second AI for an independent review | User-triggered |
 | signal-task (full) | List, defer, create-deferred operations | Phase 1 ships only `cancel` and `status` |
 
-## Phase 3 — Additional workers
+## Phase 3 — Implemented
 
 | Skill | Purpose | Notes |
 |---|---|---|
-| signal-image | Image-prompt worker for Midjourney / DALL-E / Canva | Distinct from image editing |
+| signal-copy | Long-form copy worker: email, blog, landing page, generic copy | Claims pre-check against `approved-claims.md` and `compliance.md` |
+| signal-image | Image-prompt worker for Midjourney / DALL-E / Canva | Distinct from image editing; sets `usage_rights: original` |
+| signal-video | Video-script worker for RunwayML / HeyGen / Sora | Outputs scenes with voiceover, visual direction, timing |
+| signal-translate | Translation worker for the `translation` asset type | Requires `source_asset.review_ai_pass: true` and `status: done` to dispatch |
+| signal-research | Competitor analysis, SWOT, market research worker | Strategy-scope output; never reads `approved-claims.md` |
+| signal-price | Pricing recommendations worker | Optional Phase 3 worker; market- and jurisdiction-aware |
+
+## Future workers
+
+| Skill | Purpose | Notes |
+|---|---|---|
 | signal-image-edit | Image modification prompts and asset records | Separate from text-to-image generation |
-| signal-video | Video-script worker for RunwayML / HeyGen / Sora | Outputs scripts and storyboard prompts |
-| signal-copy | Long-form copy worker: email, blog, landing page, generic copy | Highest-priority remaining worker — already advertised by `signal-create`'s `asset_type` map |
-| signal-translate | Translation worker for the `translation` asset type | Requires `source_asset.review_ai_pass: true` to dispatch |
-| signal-research | Competitor analysis, SWOT, market research worker | Strategy-scope output |
 | signal-competition | User-facing shortcut for competitor research | MVP uses `signal-research` |
-| signal-price | Pricing recommendations worker | Optional Phase 3 worker |
 | signal-sales | Sales outreach emails, call scripts, sequences | Future worker or user-facing shortcut |
 | signal-labeling | Product labeling, package copy, required label translations | Compliance-heavy schema |
 

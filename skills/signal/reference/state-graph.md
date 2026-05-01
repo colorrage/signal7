@@ -32,7 +32,7 @@ Redirects:
 brief -> create -> done
 ```
 
-Strategy create produces internal artifacts such as research or pricing recommendations. It does not publish. Most strategy asset types (`research`, `pricing`) require Phase 3 workers; `signal-create` stamps the correct asset type and `signal-worker` blocks with `awaiting-input` until the matching worker exists.
+Strategy create produces internal artifacts such as research or pricing recommendations. It does not publish. `signal-create` stamps the asset type and dispatches `signal-research` or `signal-price` directly; the task ends at `done` once the artifact is written.
 
 ## Gates
 
@@ -64,4 +64,4 @@ create (source only) -> review (source only) -> create (translations + remaining
 
 The path is a sequence of `redirect target: review` (after source assets are done) and `redirect target: create` (after the source passes review and translation assets are now eligible). `signal-create` keeps already-`done` source assets unchanged; it only dispatches the newly-eligible translation assets. `signal-review` recognises the second invocation as covering both source (already passed) and translations (new); it reuses the prior pass for source rather than re-running the AI rubric.
 
-Phase 1 has no translation worker, so partial review never engages today; the contract is documented here so it lands cleanly with `signal-translate` in Phase 3.
+`signal-translate` is the worker dispatched once the source asset passes review and translation assets become eligible.

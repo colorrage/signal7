@@ -43,16 +43,14 @@ When `status: needs-revision` is picked up after a `review -> create` redirect, 
 | asset_type | Worker | Status |
 |---|---|---|
 | social-copy | signal-social | **Phase 1 — implemented** |
-| email-copy | signal-copy | Phase 3 — planned |
-| blog | signal-copy | Phase 3 — planned |
-| landing-page | signal-copy | Phase 3 — planned |
-| copy | signal-copy | Phase 3 — planned |
-| translation | signal-translate | Phase 3 — planned |
-| image-prompt | signal-image | Phase 3 — planned |
-| video-script | signal-video | Phase 3 — planned |
-| research | signal-research | Phase 3 — planned |
-| pricing | signal-price | Phase 3 — planned |
+| email-copy | signal-copy | **Phase 3 — implemented** |
+| blog | signal-copy | **Phase 3 — implemented** |
+| landing-page | signal-copy | **Phase 3 — implemented** |
+| copy | signal-copy | **Phase 3 — implemented** |
+| translation | signal-translate | **Phase 3 — implemented** |
+| image-prompt | signal-image | **Phase 3 — implemented** |
+| video-script | signal-video | **Phase 3 — implemented** |
+| research | signal-research | **Phase 3 — implemented** |
+| pricing | signal-price | **Phase 3 — implemented** |
 
-`signal-worker` returns `awaiting-input` for any planned-but-not-implemented `asset_type` with a clear "worker `signal-X` is planned for Phase N and is not yet implemented" message. The asset is set to `status: blocked` with the same reason in its `## Completion` section.
-
-Unknown asset types (not in the table at all) also block with `awaiting-input`.
+`signal-worker` returns `awaiting-input` for unknown asset types (not in the table) with `status: blocked` and `"Unknown asset_type: <value>"` in the `## Completion` section.

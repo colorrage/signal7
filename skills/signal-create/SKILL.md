@@ -27,13 +27,13 @@ For campaign scope, also read `content-plan.md`. Phase 2 reaches this branch aft
 1. Read `brief.md`.
 2. Derive one asset per channel/language/output variant.
 3. Set `asset_type` from channel:
-   - `linkedin`, `instagram`, `twitter`, `facebook` -> `social-copy` *(Phase 1 implemented)*
-   - `email` -> `email-copy` *(worker = `signal-copy`, Phase 3)*
-   - `blog` -> `blog` *(worker = `signal-copy`, Phase 3)*
-   - `web` -> `landing-page` *(worker = `signal-copy`, Phase 3)*
-   - otherwise -> `copy` *(worker = `signal-copy`, Phase 3)*
+   - `linkedin`, `instagram`, `twitter`, `facebook` -> `social-copy` *(worker = `signal-social`)*
+   - `email` -> `email-copy` *(worker = `signal-copy`)*
+   - `blog` -> `blog` *(worker = `signal-copy`)*
+   - `web` -> `landing-page` *(worker = `signal-copy`)*
+   - otherwise -> `copy` *(worker = `signal-copy`)*
 
-   Stamp the correct type even if the worker is not yet implemented; `signal-worker` blocks unsupported types with a clear "worker not yet implemented" message rather than coercing to `social-copy`.
+   Stamp the correct type. `signal-worker` blocks unknown asset types; never coerce a channel into `social-copy`.
 4. If the derived asset count exceeds `asset_ceiling` (default 3), return `redirect target: plan`. `signal` will treat this as a campaign conversion, set task `scope: campaign`, and dispatch `signal-plan`.
 
 5. Replace every `<TODO>` sentinel in `templates/asset.md` with the resolved value when stamping `A<N>-*.md` files. Required: `id`, `parent`, `title`, `asset_type`, `channel`. A remaining sentinel is a hard error and must be surfaced as `awaiting-input` rather than left in place.
@@ -52,7 +52,7 @@ For campaign scope, also read `content-plan.md`. Phase 2 reaches this branch aft
 
 ## Strategy Scope
 
-Create internal research/pricing assets when requested. In Phase 1, unsupported strategy asset types (`research`, `pricing`) block with `awaiting-input` until Phase 3 workers exist.
+Create internal `research` and `pricing` assets when requested. Strategy tasks dispatch `signal-research` and/or `signal-price` directly, write the artifact, and end at `done` — review and publish are skipped unless the user later promotes the artifact to public content.
 
 ## Eligibility
 
@@ -71,7 +71,7 @@ Eligible assets with disjoint `writes[]` may run in parallel.
 
 If the eligible set after a worker pass contains translation assets whose `source_asset` has `review_ai_pass: null`, do not block them — return `redirect target: review` so `signal-review` runs the source-asset rubric first. After `signal-review` redirects back, the translations become eligible (source has `review_ai_pass: true` and `status: done`) and `signal-create` dispatches their workers. See `state-graph.md` § Partial Review for Translation Flow.
 
-This path never engages in Phase 1 because no translation worker exists yet. The contract is documented now so `signal-translate` lands cleanly in Phase 3.
+`signal-translate` is the worker dispatched after the partial-review redirects resolve.
 
 ## Output Contract
 
@@ -95,7 +95,7 @@ signal_verdict:
   summary: "Quick brief expanded past the asset ceiling; campaign planning is required."
 ```
 
-Source review needed before translations (Phase 3):
+Source review needed before translations:
 
 ```yaml
 signal_verdict:

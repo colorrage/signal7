@@ -47,13 +47,15 @@ id | title | asset_type | channel | language | source_asset | depends | publish_
 Channel to asset type:
 
 - `linkedin`, `instagram`, `twitter`, `facebook` -> `social-copy`
-- `email` -> `email-copy` (worker planned for Phase 3)
-- `blog` -> `blog` (worker planned for Phase 3)
-- `web` -> `landing-page` (worker planned for Phase 3)
-- internal strategy/research deliverables -> `research` (worker planned for Phase 3)
-- otherwise -> `copy` (worker planned for Phase 3)
+- `email` -> `email-copy`
+- `blog` -> `blog`
+- `web` -> `landing-page`
+- internal strategy/research deliverables -> `research`
+- otherwise -> `copy`
 
-Stamp the correct asset type even when the worker is not implemented. `signal-worker` owns the later "worker not yet implemented" block; planning must not coerce unsupported channels into `social-copy`.
+For image and video assets, use `image-prompt` and `video-script` respectively. For locale variants, use `translation` and set `source_asset` to the same-task asset id whose review must pass first.
+
+Stamp the correct asset type. `signal-worker` blocks unknown asset types; planning must not coerce channels into `social-copy`.
 
 For multi-language campaigns, prefer direct language-specific social assets when the brief asks for original localized copy. Use `translation` only when the brief asks to translate a specific source asset after review.
 

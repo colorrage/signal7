@@ -59,13 +59,13 @@ brief -> plan -> plan-review -> create -> review -> publish -> done
 
 Campaign scope enters planning after the brief approval gate.
 
-### strategy — Phase 1 (partial)
+### strategy
 
 ```text
 brief -> create -> done
 ```
 
-The brief and create phases run today, but most strategy `asset_type` values (`research`, `pricing`) require workers that ship in Phase 3. `signal-create` stamps the correct asset type and lets `signal-worker` block with `awaiting-input` until the matching worker exists.
+`signal-create` stamps `research` or `pricing` and dispatches `signal-research` or `signal-price` directly. The task ends at `done` once the artifact is written; review and publish are skipped unless the artifact is later promoted into public content.
 
 ## Transition Rules
 

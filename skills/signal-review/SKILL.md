@@ -85,7 +85,7 @@ signal_verdict:
   summary: "AI review passed; human approval is pending."
 ```
 
-Source asset(s) ready in partial-review mode (translation flow, Phase 3):
+Source asset(s) ready in partial-review mode (translation flow):
 
 ```yaml
 signal_verdict:

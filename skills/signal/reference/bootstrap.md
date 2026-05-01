@@ -36,6 +36,9 @@ enabled_channels:
   - instagram
   - twitter
   - facebook
+  - email
+  - blog
+  - web
 publish_rate_limits:
   global_per_hour: 10
   per_channel_per_hour: 3
@@ -48,7 +51,7 @@ external_status:
   adapters: []
 ```
 
-`enabled_channels` lists only the channels Signal7 can produce content for today. `email`, `blog`, and `web` are omitted from the seeded list because the workers behind them are Phase 3. They remain valid `asset_type` / `channel` values in `data-model.md` so once `signal-copy` ships, simply re-adding them to `config.yaml` enables those flows.
+`enabled_channels` lists the channels Signal7 can produce content for today. With the Phase 3 worker surface shipped (`signal-copy`, `signal-image`, `signal-video`, `signal-translate`, `signal-research`, `signal-price`), the seeded list covers social, email, blog, and web. Projects can prune entries they do not use.
 
 `publish_rate_limits.on_limit: defer` means `signal-publish` records a `blocked-rate-limit` entry and surfaces `awaiting-input` to the user; the user can rerun later (manual defer). `on_limit: block` means the publish phase fails the asset outright. `defer` is the default and recommended behaviour. See `signal-publish` for the precise rule.
 

@@ -55,9 +55,9 @@ If the user replies to an open gate, clear `awaiting`, dispatch the current phas
 
 Dispatch mode for every phase skill is in `portability.md` § Dispatch Contract. `signal-plan-review` must run in a fresh sub-agent context; everything else is inline today.
 
-Phase 2 implements campaign planning and plan review. Campaigns that rely on workers not yet implemented (email, blog, web, translation, research, pricing) may still block later in `signal-worker`; planning should still preserve the correct asset type.
+Phase 2 implements campaign planning and plan review. Phase 3 ships the remaining content workers (`signal-copy`, `signal-image`, `signal-video`, `signal-translate`, `signal-research`, `signal-price`), so a campaign can mix social, long-form, image, video, translation, research, and pricing assets in a single content plan. `signal-worker` only blocks for asset types not in the routing table.
 
-Strategy `brief` runs but most strategy `asset_type` workers are Phase 3.
+Strategy scope (`brief -> create -> done`) dispatches `signal-research` and/or `signal-price` directly and skips review/publish. If the user later turns the strategy artifact into public content, that becomes a follow-up task that runs through `signal-copy` or `signal-social`.
 
 ## Verdict Handling
 

@@ -393,3 +393,46 @@ After Phase 0 + Phase 1 shipped, five review issues opened against `colorrage/si
 - Phase 4's `signal-task` is shrunk: `cancel` + `status` already shipped, so Phase 4 only needs to add `list` (full), `defer`, `create-deferred`, and the `promote` bridge with `signal-backlog`.
 - The Phase 0 future-skill-registry has been rewritten by phase rather than alphabetically, so Phase 2 / Phase 3 / Phase 4+ work is now visible at a glance.
 
+---
+
+## Phase 3 — Shipped 2026-05-01
+
+All seven Phase 3 changes landed: six new content workers and the `signal-worker` routing update. The full `asset_type` surface advertised by `signal-create` and `signal-plan` now has a real implementation behind it.
+
+**Files added:**
+
+| # | File | Status |
+|---|------|--------|
+| 1 | `skills/signal-copy/SKILL.md` | Implemented. Long-form copy worker for `email-copy`, `blog`, `landing-page`, and generic `copy`. Reads `brand.md`, `product.md`, `approved-claims.md` (required); `past-campaigns.md` optional. Claims pre-check against `approved-claims.md` and `compliance.md` before output; blocks the asset with `awaiting-input` when `compliance.md` is `questions-open` or `blocked`, or when a draft claim cannot be matched. |
+| 2 | `skills/signal-image/SKILL.md` | Implemented. Generates a host-neutral text-to-image prompt for `image-prompt` assets. Reads `brand.md` `visual_guidelines` and `forbidden_terms[]`. Sets `usage_rights: original` on the asset (the prompt is original; eventual image rights depend on the rendering tool). |
+| 3 | `skills/signal-video/SKILL.md` | Implemented. Scene-by-scene script for `video-script` assets — per-scene voiceover, visual direction, timing cue, optional on-screen text. Reads `brand.md` for tone; `product.md` optional. |
+| 4 | `skills/signal-translate/SKILL.md` | Implemented. Source-review gate runs first: `source_asset.review_ai_pass: true` *and* `status: done` are both required. Translates the source asset's `## Content` into the target `language`. Honours `brand.md` `forbidden_terms[]` (verbatim, never translated) and brand/product translation policy when defined. Records `source_asset` and `source_language` in `generation_log`. |
+| 5 | `skills/signal-research/SKILL.md` | Implemented. Reads `competitors.md`, `past-campaigns.md`, and `product.md` (all required). Default output: Summary, Competitor Landscape, Differentiation Opportunities, Lessons from Past Campaigns, Open Questions. Cites source rows inline. Does not read `approved-claims.md` — research output is internal; the public-content path enforces claims. |
+| 6 | `skills/signal-price/SKILL.md` | Implemented. Reads `product.md` and `competitors.md` (both required). Output: Summary, Competitor Pricing, Recommendation, Jurisdiction Notes, Risks. Surfaces `market`/`jurisdiction` ambiguity in the recommendation rather than blocking. Never asserts a competitor pricing claim absent from `competitors.md`. The optional Phase 3 worker — kept implemented (not a TODO placeholder) since the routing surface advertised it. |
+| 7 | **Updated** `skills/signal-worker/SKILL.md` | Routing table flipped from "Phase 3 — planned" to "Phase 3 — implemented" for all six asset_type families above. The "planned-but-not-implemented" branch was removed; the only remaining block is for unknown asset types (not in the table at all), which still set `status: blocked` with `"Unknown asset_type: <value>"` and return `awaiting-input`. |
+
+**Other docs synced to Phase 3:**
+
+- `skills/signal/reference/adding-workers.md` — asset-type routing table flipped to "implemented" for all six new workers; the planned-but-not-implemented language was removed.
+- `skills/signal/reference/future-skill-registry.md` — old "Phase 3 — Additional workers" table split into a "Phase 3 — Implemented" section (the six workers above) and a "Future workers" section (`signal-image-edit`, `signal-competition`, `signal-sales`, `signal-labeling`).
+- `skills/signal/reference/data-model.md` — top-of-file phase-status note updated to "Phase 0–3 implemented."
+- `skills/signal-plan/SKILL.md` — channel→asset_type mapping no longer marks email/blog/web/research/copy as "Phase 3 planned." Added image/video/translation guidance for campaign planning.
+- `skills/signal-create/SKILL.md` — quick-scope channel→asset_type mapping updated likewise; the "stamp the correct type even if the worker is not yet implemented" sentence simplified to "stamp the correct type. `signal-worker` blocks unknown asset types."
+- `skills/signal/SKILL.md` — Phase 2/3 status paragraph updated to describe the full Phase 3 surface and the strategy-scope dispatch path.
+- `README.md` — Status section moved to "Phase 0–3," scope table marks `strategy` as Implemented, the planned-but-not-implemented examples replaced with the working campaign / translation / blog flows.
+
+**Worker contract uniformity (followed across all six new workers):**
+
+- Frontmatter: `name`, `description`, `user-invocable: false`, `worker_version: 1`.
+- Behaviour: parse asset, confirm `asset_type`, confirm required context, lazy-create `prompts/`, store the prompt at `prompts/A<N>-r<revision>-<worker>.md`, write content under `## Content`, append one `generation_log` entry with `worker_version`, `prompt_path`, `prompt_hash`, `content_hash`, set `status: done`.
+- Verdicts: `phase-complete` on success, `awaiting-input` on block, fenced YAML at end of response per `gates.md`.
+- Never write `task.md`.
+
+**What stayed planned (not changed by Phase 3):**
+
+- Phase 4 management surface (`signal-backlog`, `signal-recipe`, `signal-handoff`, `signal-retro`, `signal-team`).
+- The rest of `signal-task` (`list`, `defer`, `create-deferred`, `promote`).
+- Real channel adapters and the performance feedback loop.
+- The future workers in `future-skill-registry.md` (`signal-image-edit`, `signal-competition`, `signal-sales`, `signal-labeling`).
+
+**Phase 3 totals:** 6 new SKILL.md files, 1 updated SKILL.md (`signal-worker`), 7 reference/template docs synced. No schema changes — the Phase 0 data model already accounted for every asset_type these workers consume.

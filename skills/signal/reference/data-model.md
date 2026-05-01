@@ -2,7 +2,7 @@
 
 This is the source of truth for `.signal/` state, task artifacts, asset files, and shared schemas. Signal7 skills must prefer these field names and enum values over local inventions.
 
-> **Phase status.** Phase 0–3 are implemented: foundation, quick scope, campaign planning + plan-review, and the full content worker surface (`signal-social`, `signal-copy`, `signal-image`, `signal-video`, `signal-translate`, `signal-research`, `signal-price`). Some shapes documented here describe contracts for skills that are still planned (`signal-backlog`, `signal-recipe`, the rest of `signal-task`). Those sections are marked **planned**. README § Status is the source of truth for what is shipped today.
+> **Phase status.** Phase 0–4 are implemented: foundation, quick scope, campaign planning + plan-review, the full content worker surface (`signal-social`, `signal-copy`, `signal-image`, `signal-video`, `signal-translate`, `signal-research`, `signal-price`), and the full management surface (`signal-task`, `signal-backlog`, `signal-handoff`, `signal-retro`, `signal-recipe`). The remaining planned skill is `signal-team` (Phase 5). README § Status is the source of truth for what is shipped today.
 
 ## State Root
 
@@ -30,8 +30,9 @@ Project state lives under `.signal/` in the user's project, not inside the Signa
     competitors.md
     past-campaigns.md
     approved-claims.md
-  recipes/                      # planned (signal-recipe)
-  backlog.md                    # planned (signal-backlog)
+  recipes/                      # created lazily by signal-recipe
+  backlog.md                    # managed by signal-backlog
+  retro.md                      # created lazily by signal-retro project-level
   config.yaml
 ```
 
@@ -309,9 +310,9 @@ expires_at: null
 jurisdictions: []
 ```
 
-## backlog.md — planned
+## backlog.md
 
-Owned by `signal-backlog` (not yet implemented). Until `signal-backlog` ships, `.signal/backlog.md` is a passive markdown file users may write into manually but no Signal7 skill consumes.
+Owned by `signal-backlog`. `.signal/backlog.md` holds `B<N>` entries as YAML blocks under `## B<N>` headings. `signal-backlog` re-reads on every operation; manual edits between operations are tolerated.
 
 Entries use `B<N>` ids:
 

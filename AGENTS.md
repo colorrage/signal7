@@ -5,9 +5,9 @@ Signal7 is a skill-based AI agent workflow system for business operations. All s
 ## Skill naming
 
 - Orchestrator: `signal/SKILL.md`
-- Phase skills: `signal-brief/`, `signal-create/`, `signal-review/`, `signal-publish/`, `signal-worker/` *(implemented)*; `signal-plan/`, `signal-plan-review/` *(planned, Phase 2)*
-- Management skills: `signal-task/` *(implemented — cancel + status only)*; `signal-backlog/`, `signal-recipe/`, `signal-handoff/`, `signal-retro/`, `signal-team/` *(planned, Phase 2/3)*
-- Content workers: `signal-social/` *(implemented)*; `signal-copy/`, `signal-image/`, `signal-video/`, `signal-translate/`, `signal-research/`, `signal-price/` *(planned, Phase 2/3)*
+- Phase skills: `signal-brief/`, `signal-plan/`, `signal-plan-review/`, `signal-create/`, `signal-review/`, `signal-publish/`, `signal-worker/` *(implemented)*
+- Management skills: `signal-task/`, `signal-backlog/`, `signal-recipe/`, `signal-handoff/`, `signal-retro/` *(implemented)*; `signal-team/` *(planned, Phase 5)*
+- Content workers: `signal-social/`, `signal-copy/`, `signal-image/`, `signal-video/`, `signal-translate/`, `signal-research/`, `signal-price/` *(implemented)*
 
 `README.md` § Status is the source of truth for what is shipped today. Reference docs (`data-model.md`, `gates.md`, etc.) describe the eventual contract — anything not listed in Status as "implemented" is forward-looking.
 

@@ -47,7 +47,7 @@ Signal7 mirrors Hyper7's architecture: disk-based state (`.signal/` folder), gat
 
 ## Status
 
-**What is implemented today (Phase 0-3):**
+**What is implemented today (Phase 0-4):**
 
 - The `quick` scope, end-to-end: brief → create → review → publish → done
 - The `campaign` planning path: brief → plan → plan-review → create → review → publish → done
@@ -64,15 +64,20 @@ Signal7 mirrors Hyper7's architecture: disk-based state (`.signal/` folder), gat
 - The `signal` orchestrator, the foundation reference docs, and the asset/brief/compliance schemas
 - Disk-based state (`.signal/`), idempotent publish ledger, AI review rubric, prompt storage with hashes
 - A three-layer QA testing system: Layer 1 static checks (`scripts/run-signal-fixtures.sh`), Layer 2 live-skill replay (`scripts/replay-fixture.sh` / `scripts/run-all-fixtures.sh`), and Layer 3 manual pre-ship checklist (`evals/qa-checklist.md`). See `evals/signal-fixtures/README.md` for the full documentation.
-- A minimal `signal-task` skill with two operations: `cancel` and `status`
+- The full management surface (Phase 4):
+  - `signal-task` — `list`, `status`, `cancel`, `defer`, `create-deferred`, `promote`
+  - `signal-backlog` — `add`, `list`, `show`, `promote`, `drop` over `B<N>` entries in `.signal/backlog.md`
+  - `signal-handoff` — write `handoff.md` for an in-flight task
+  - `signal-retro` — per-task `retro.md` or project-level `.signal/retro.md`
+  - `signal-recipe` — `list`, `show`, `create`, `update`, `delete`, `run` over `.signal/recipes/*.md` playbooks
 
-**What is planned but not implemented (Phase 4+):**
+**What is planned but not implemented (Phase 5+):**
 
-- The full management surface: `signal-backlog`, `signal-recipe`, `signal-handoff`, `signal-retro`, `signal-team`
-- Beyond cancel/status, all `signal-task` operations (list, defer, create-deferred)
+- `signal-team` — second-opinion delegation to another AI agent (Phase 5)
 - Real channel adapters (LinkedIn, Meta, email tools, CMS) — today's `publish-log.md` is on-disk only
+- Performance feedback loop, multi-stakeholder approval routing, recurring/automation primitives
 
-Signal7 today supports campaigns that mix social, long-form, image, video, translation, research, and pricing assets. Worker dispatch will only block if the asset uses a type that is not in the routing table at all.
+Signal7 today supports campaigns that mix social, long-form, image, video, translation, research, and pricing assets, with full task lifecycle management (defer, cancel, backlog promotion, handoff, retro, recipes). Worker dispatch will only block if the asset uses a type that is not in the routing table at all.
 
 The `Status` section in this README is the source of truth for what is shipped. Individual `SKILL.md` files describe behaviour. `data-model.md`, `gates.md`, and the other reference docs describe the eventual contract — anything they describe that is not yet listed above as "implemented" should be read as future work.
 
@@ -83,15 +88,19 @@ The `Status` section in this README is the source of truth for what is shipped. 
 | Skill | What it does |
 |---|---|
 | `signal` | Orchestrator. Start or resume a task. |
-| `signal-task` | Cancel a task or report its status. (Other operations are planned.) |
+| `signal-task` | List, status, cancel, defer, create-deferred, promote. |
+| `signal-backlog` | Add / list / show / promote / drop ideas in `.signal/backlog.md`. |
+| `signal-handoff` | Write a session handoff doc for an in-flight task. |
+| `signal-retro` | Capture per-task or project-level retrospectives. |
+| `signal-recipe` | Manage and stage `.signal/recipes/*.md` playbooks. |
 
 **Implemented internal skills (not user-invocable):**
 
 `signal-brief`, `signal-plan`, `signal-plan-review`, `signal-create`, `signal-review`, `signal-publish`, `signal-worker`, `signal-social`, `signal-copy`, `signal-image`, `signal-video`, `signal-translate`, `signal-research`, `signal-price`.
 
-**Planned (placeholders may exist; will refuse with a clear message until shipped):**
+**Planned (will refuse with a clear message until shipped):**
 
-User-facing: `signal-backlog`, `signal-recipe`, `signal-handoff`, `signal-retro`, `signal-team`.
+User-facing: `signal-team`.
 
 ---
 
@@ -131,10 +140,20 @@ Strategy tasks (research-only or pricing-only) run through `brief -> create -> d
 |---------|-------------|
 | `/signal <goal>` | Start a new task or resume an existing one |
 | `/signal S<N>` | Resume a specific task |
+| `/signal-task list [active\|archive\|all]` | List tasks |
 | `/signal-task status [S<N>]` | Show status of one task or list active tasks |
 | `/signal-task cancel S<N>` | Cancel a task and archive it |
+| `/signal-task defer S<N>` | Park an active task without archiving |
+| `/signal-task create-deferred <title>` | Seed a deferred task without entering the workflow |
+| `/signal-task promote B<N>` | Promote a backlog entry to a deferred task |
+| `/signal-backlog add <title>` | Capture an idea as `B<N>` |
+| `/signal-backlog list [open\|promoted\|dropped\|all]` | List backlog entries |
+| `/signal-backlog promote B<N>` / `drop B<N>` | Convert or dismiss backlog entries |
+| `/signal-handoff [S<N>]` | Write `handoff.md` for the active task |
+| `/signal-retro task S<N>` / `project` | Capture retrospective notes |
+| `/signal-recipe list \| show \| create \| update \| delete \| run` | Manage `.signal/recipes/*.md` playbooks |
 
-`/signal-backlog`, `/signal-recipe`, `/signal-team`, `/signal-handoff`, `/signal-retro` are not yet implemented. Calling them today returns a "planned, not yet implemented" message.
+`/signal-team` is not yet implemented. Calling it today returns a "planned, not yet implemented" message.
 
 ### Examples
 
@@ -187,4 +206,4 @@ Signal7: [stamps a blog asset; signal-copy generates the long-form draft, signal
 
 ## When the rest will land
 
-The implementation order from here is: Phase 4 (management skills — backlog / recipe / handoff / retro / team, plus the rest of `signal-task`), then real channel adapters, performance feedback, multi-stakeholder approval routing, and recurring/recipe automation. See `.hyper/tasks/` in this repo or the impl-plan archived in the parent Hyper repo for the rolling plan.
+The implementation order from here is: Phase 5 (`signal-team` — second-opinion delegation), then real channel adapters, performance feedback, multi-stakeholder approval routing, and recurring/automation primitives. See `.hyper/tasks/` in this repo or the impl-plan archived in the parent Hyper repo for the rolling plan.

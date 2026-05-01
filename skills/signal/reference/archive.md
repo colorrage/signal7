@@ -14,7 +14,7 @@ Ids are never reused. New task id allocation scans both `.signal/tasks/` and `.s
 Only orchestrators or management skills move folders:
 
 - `signal` archives phase-driven `done` tasks.
-- `signal-task` archives explicit cancellation. (Phase 1 ships `cancel`; `defer` is planned management work.)
+- `signal-task` archives explicit cancellation (`cancel`). `defer` does **not** archive — deferred tasks stay under `.signal/tasks/` so they can be resumed.
 
 Phase skills and workers never move task folders.
 

@@ -20,16 +20,21 @@ Do not create a Phase 0 placeholder for `signal-price`. Phase 3 either implement
 | signal-plan | Generate `content-plan.md` for campaign scope | Unblocks the `campaign` flow |
 | signal-plan-review | Adversarial review of `content-plan.md` in a fresh sub-agent context | Independence from plan author is the design guarantee |
 
-## Planned Management Skills
+## Phase 4 — Implemented
 
 | Skill | Purpose | Notes |
 |---|---|---|
+| signal-task (full) | `list`, `status`, `cancel`, `defer`, `create-deferred`, `promote` | Phase 1 shipped `cancel` + `status`; Phase 4 added the rest |
 | signal-backlog | Capture and triage ideas (`B<N>`) before promoting to tasks | Bootstrap-side skill |
-| signal-recipe | Save and replay procedural playbooks | Bootstrap-side skill |
+| signal-recipe | Save and stage procedural playbooks under `.signal/recipes/` | `run` stages steps for the user; no auto-execution |
 | signal-handoff | Write a session handoff doc for an in-flight task | User-triggered |
 | signal-retro | Reflect on a finished task or session | User-triggered |
+
+## Phase 5 — Planned
+
+| Skill | Purpose | Notes |
+|---|---|---|
 | signal-team | Dispatch a second AI for an independent review | User-triggered |
-| signal-task (full) | List, defer, create-deferred operations | Phase 1 ships only `cancel` and `status` |
 
 ## Phase 3 — Implemented
 
@@ -51,7 +56,7 @@ Do not create a Phase 0 placeholder for `signal-price`. Phase 3 either implement
 | signal-sales | Sales outreach emails, call scripts, sequences | Future worker or user-facing shortcut |
 | signal-labeling | Product labeling, package copy, required label translations | Compliance-heavy schema |
 
-## Phase 4+ — Beyond workers
+## Phase 5+ — Beyond workers and management
 
 | Capability | Notes |
 |---|---|

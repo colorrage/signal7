@@ -436,3 +436,44 @@ All seven Phase 3 changes landed: six new content workers and the `signal-worker
 - The future workers in `future-skill-registry.md` (`signal-image-edit`, `signal-competition`, `signal-sales`, `signal-labeling`).
 
 **Phase 3 totals:** 6 new SKILL.md files, 1 updated SKILL.md (`signal-worker`), 7 reference/template docs synced. No schema changes — the Phase 0 data model already accounted for every asset_type these workers consume.
+
+---
+
+## Phase 4 — Shipped 2026-05-01
+
+All five Phase 4 changes landed. The full management surface is now live: lifecycle operations on tasks, a real backlog inbox, session handoffs, retrospectives, and recipe playbooks.
+
+**Files added or expanded:**
+
+| # | File | Status |
+|---|------|--------|
+| 1 | `skills/signal-task/SKILL.md` | **Expanded.** Phase 1 shipped `cancel` + `status`. Phase 4 added `list [active\|archive\|all]`, `defer S<N> [reason: …]`, `create-deferred <title>`, and `promote B<N>` (delegating to `signal-backlog`). `defer` does not archive — folders stay in `.signal/tasks/` so the user can resume with `/signal S<N>`. `create-deferred` seeds a `phase: deferred` task without entering the workflow. |
+| 2 | `skills/signal-backlog/SKILL.md` | **New.** Manages `B<N>` entries in `.signal/backlog.md` as YAML blocks under `## B<N>` headings. Operations: `add`, `list [open\|promoted\|dropped\|all]`, `show`, `promote`, `drop`. Promotion seeds a `phase: deferred` task in `.signal/tasks/S<N>-…/`, mirrors the suggested scope, and flips the backlog entry's `status` to `promoted` (with `promoted_to: S<N>`). Backlog ids are global, single-counter, never reused. |
+| 3 | `skills/signal-handoff/SKILL.md` | **New.** Writes `handoff.md` into the active task folder. Structured capture only — six sections (`Where this stands`, `Decisions made this session`, `Paths already ruled out`, `Uncommitted work`, `Open questions`, `Next step`); the user fills each. Multiple handoffs append rather than overwrite. Refuses to write into archived task folders. |
+| 4 | `skills/signal-retro/SKILL.md` | **New.** Two scopes: `task S<N>` writes `retro.md` into the task folder (active or archived — retros on archived tasks are explicitly allowed), `project` appends to `.signal/retro.md`. Three sections: `What worked`, `What didn't`, `What to do differently next time`. Append-only. |
+| 5 | `skills/signal-recipe/SKILL.md` | **New.** Manages `.signal/recipes/<slug>.md` playbook files. Operations: `list`, `show`, `create`, `update`, `delete`, `run`. `run` reads the recipe's `## Steps` block, surfaces `/signal*` lines as candidate commands for the user, and updates the recipe's `last_run` / `run_count` frontmatter — it does **not** auto-invoke steps. Auto-execution is the deliberate Phase 5+ "recurring/automation" path. |
+
+**Other docs synced to Phase 4:**
+
+- `skills/signal/reference/bootstrap.md` — `.signal/` shape updated: `recipes/` now lazy via `signal-recipe`, `backlog.md` seeded as a passive markdown stub managed by `signal-backlog`, optional `retro.md` for project-level retros. Write-side and read-side skill lists rewritten. The seeded `backlog.md` comment no longer says "until `signal-backlog` ships in Phase 2."
+- `skills/signal/reference/data-model.md` — top-of-file phase-status note now reads "Phase 0–4 implemented." The state-tree comments on `recipes/`, `backlog.md`, and `retro.md` no longer say "planned." The `## backlog.md — planned` heading was promoted to `## backlog.md` and reframed around `signal-backlog`.
+- `skills/signal/reference/archive.md` — clarifies that `signal-task defer` does not archive; only `cancel` and phase-driven `done` move folders to `.signal/archive/`.
+- `skills/signal/reference/future-skill-registry.md` — old "Planned Management Skills" table split into "Phase 4 — Implemented" (`signal-task` full, `signal-backlog`, `signal-recipe`, `signal-handoff`, `signal-retro`) and "Phase 5 — Planned" (`signal-team`). The "Phase 4+ — Beyond workers" heading became "Phase 5+ — Beyond workers and management" since Phase 4 is now done.
+- `README.md` — Status section moved to "Phase 0–4." The user-invocable skill table grew to include the four new management skills plus the expanded `signal-task`. The "Managing tasks" command table now lists every Phase 4 command. The "When the rest will land" closer points at Phase 5 (`signal-team`) and beyond.
+
+**Skill contract uniformity (followed across all four new management skills):**
+
+- Frontmatter: `name`, `description`. `signal-task`, `signal-backlog`, `signal-handoff`, `signal-retro`, and `signal-recipe` are all user-invocable, so they omit `user-invocable: false`.
+- Verdicts: `phase-complete` on success, `awaiting-input` on precondition failure, fenced YAML at end of response per `gates.md`.
+- State writes: only `signal-task` writes top-level `task.md` fields (`phase`, `awaiting`, `scope`); the rule that `signal` is the only other writer of those fields is preserved.
+- `signal-task promote B<N>` is a delegating shortcut to `signal-backlog promote B<N>` — neither parses `backlog.md` independently.
+
+**What stayed planned (not changed by Phase 4):**
+
+- `signal-team` (Phase 5) — second-opinion delegation.
+- Real channel adapters, performance feedback loop, multi-stakeholder approval routing.
+- `signal-recurring` and the broader recurring/automation primitives.
+- The future workers in `future-skill-registry.md` (`signal-image-edit`, `signal-competition`, `signal-sales`, `signal-labeling`).
+
+**Phase 4 totals:** 4 new SKILL.md files, 1 expanded SKILL.md (`signal-task`), 5 reference/template docs synced. No schema changes — the Phase 0 data model already had `task.md`, `backlog.md`, and the archive contract; Phase 4 wired the operations onto them.
+

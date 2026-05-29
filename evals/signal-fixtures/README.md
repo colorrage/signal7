@@ -13,7 +13,7 @@ Any contract change to phase skills should update the matching fixture(s).
 
 ## Fixtures
 
-All 9 fixtures are listed below. The last five are orchestrator-level and Phase 2 campaign fixtures.
+All 20 fixtures are listed below. The first nine are Phase 1 orchestrator and campaign fixtures; the next six are Phase 3 content worker fixtures; the last five are Phase 4+5 management and signal-team fixtures.
 
 | Fixture | Covers |
 |---|---|
@@ -26,6 +26,17 @@ All 9 fixtures are listed below. The last five are orchestrator-level and Phase 
 | `campaign-brief-to-plan/` | **Campaign.** A campaign brief (`scope: campaign`) is approved and `signal-plan` generates `content-plan.md` with asset stubs. Verifies the brief→plan transition. |
 | `plan-review-reject-rework/` | **Campaign.** A plan review rejects the content plan, triggering a redirect back to `signal-plan` for rework. Verifies the plan-review rework loop. |
 | `campaign-multi-asset-create/` | **Campaign.** A campaign plan with multiple channels and languages produces matching `A<N>-*.md` asset stubs. Verifies correct asset generation from the content plan. |
+| `copy-generate-blog/` | **Phase 3 — signal-copy.** Blog asset generation. Worker reads brand.md, product.md, approved-claims.md context and produces a long-form blog post. |
+| `translate-source-review-gate/` | **Phase 3 — signal-translate.** Source review gate enforcement. Translation only proceeds if the source asset has `review_ai_pass: true`. |
+| `image-generate-prompt/` | **Phase 3 — signal-image.** Text-to-image prompt generation. Worker reads visual_guidelines from brand.md and produces a structured prompt. |
+| `video-script-generate/` | **Phase 3 — signal-video.** Video script generation from brand.md context and brief.md objective. |
+| `research-generate-report/` | **Phase 3 — signal-research.** Research report generation using competitor and market context files. |
+| `worker-routing-expanded/` | **Phase 3 — signal-worker.** Worker dispatch routing for all implemented content workers. Verifies correct routing by asset_type. |
+| `backlog-add-promote/` | **Phase 4 — signal-backlog.** `add` writes a backlog entry with `B<N>` id; `promote B<N>` creates a deferred `S<N>` task folder seeded from the backlog entry. Structural validation. |
+| `recipe-create-run/` | **Phase 4 — signal-recipe.** `create` writes a recipe file to `.signal/recipes/`; `run` reads the recipe, stages steps, and updates `last_run` / `run_count` frontmatter. Structural validation. |
+| `handoff-write/` | **Phase 4 — signal-handoff.** Writes `handoff.md` to the active task folder with all six required sections and appends a `## Decisions` entry to `dashboard.md`. Structural validation. |
+| `retro-write/` | **Phase 4 — signal-retro.** Writes a dated project-level retro entry to `.signal/retro.md` with required and optional sections. Structural validation. |
+| `team-review-plan/` | **Phase 5 — signal-team.** Dispatches a second AI agent to review a campaign content plan (2-channel, 2-language matrix), verifies findings against source artifacts. Re-playable fixture. |
 
 ## How fixtures are organised
 

@@ -113,8 +113,10 @@ extract_yaml_blocks() {
 # Body text is stdin (everything before ## Output Contract).
 get_allowed_verdicts() {
   awk '
-    /^Allowed verdicts:/ {
+    /^Allowed verdicts/ {
       line=$0
+      # Strip qualifier like "when chained from `signal`:" — keep only after the colon
+      sub(/^Allowed verdicts[^:]*:[[:space:]]*/, "", line)
       # Extract comma-separated backtick-quoted values
       while (match(line, /`[^`]*`/)) {
         val=substr(line, RSTART+1, RLENGTH-2)
@@ -244,6 +246,23 @@ check_review_md() {
 
 # ─── Layer 1 static checks ──────────────────────────────────────────────────
 
+# Extract `verdict:` values from fenced YAML blocks inside Output Contract.
+# Input: Output Contract section (stdin). Output: one verdict value per line.
+extract_yaml_verdict_values() {
+  local label="$1"  # for error messages
+  awk '
+    /^```yaml$/ {in_block=1; next}
+    in_block && /^```$/ {in_block=0; next}
+    in_block && /^[[:space:]]*verdict:/ {
+      val=$0
+      sub(/^[[:space:]]*verdict:[[:space:]]*/,"",val)
+      sub(/[[:space:]]+#.*$/,"",val)
+      gsub(/^"|"$/,"",val)
+      if (val != "") print val
+    }
+  '
+}
+
 # check_verdict_encoding_parity:
 #   Parse each SKILL.md `## Output Contract` section, extract every fenced
 #   YAML block, validate it is a valid `signal_verdict` with keys
@@ -332,7 +351,7 @@ check_output_contract_completeness() {
   # Declared verdicts from the Allowed verdicts: line (inside Output Contract section)
   body_verdicts="$(echo "$output_contract" | get_allowed_verdicts | sort -u)"
   if [[ -z "$body_verdicts" ]]; then
-    echo "  check_output_contract_completeness: SKIP (no 'Allowed verdicts:' line)"
+    echo "  check_output_contract_completeness: SKIP (no 'Allowed verdicts' line)"
     return 0
   fi
   # Verdicts from YAML blocks in Output Contract
@@ -367,7 +386,7 @@ check_output_contract_completeness() {
   # Scan body text for backtick-quoted verdict values outside Allowed verdicts line
   local full_body body_backticked
   full_body="$(awk '/^## Output Contract$/{exit} {print}' "$skill_path")"
-  body_backticked="$(echo "$full_body" | awk '/^Allowed verdicts:/{next} {while(match($0,/`[^`]*`/)){v=substr($0,RSTART+1,RLENGTH-2);$0=substr($0,RSTART+RLENGTH);if(v~/^(awaiting-input|awaiting-approval|review-pass-approval-pending|phase-complete|redirect)$/)print v}}' | sort -u)"
+  body_backticked="$(echo "$full_body" | awk '/^Allowed verdicts/{next} {while(match($0,/`[^`]*`/)){v=substr($0,RSTART+1,RLENGTH-2);$0=substr($0,RSTART+RLENGTH);if(v~/^(awaiting-input|awaiting-approval|review-pass-approval-pending|phase-complete|redirect)$/)print v}}' | sort -u)"
   if [[ -n "$body_backticked" ]]; then
     local undeclared
     undeclared="$(comm -23 <(echo "$body_backticked") <(echo "$body_verdicts"))"
@@ -438,8 +457,12 @@ check_fixture_expectation_parity() {
   local allowed
   allowed="$(extract_section "$skill_path" "Output Contract" | get_allowed_verdicts | sort -u)"
   if [[ -z "$allowed" ]]; then
-    fail "$fixture" "check_fixture_expectation_parity: target skill '$target_skill' has no 'Allowed verdicts:' line"
-    return 1
+    # Fallback: extract verdict values from YAML blocks when no "Allowed verdicts" line exists
+    allowed="$(extract_section "$skill_path" "Output Contract" | extract_yaml_verdict_values "$target_skill" | sort -u)"
+  fi
+  if [[ -z "$allowed" ]]; then
+    # Skill has neither — skip (user-invocable skills like signal-team)
+    return 0
   fi
   if ! echo "$allowed" | grep -qFx "$exp_verdict"; then
     fail "$fixture" "check_fixture_expectation_parity: expected verdict '$exp_verdict' not in $target_skill allowed verdicts ($(echo "$allowed" | tr '\n' ' '))"

@@ -1,0 +1,16 @@
+---
+schema_version: 1
+brand_version: 1
+tone_guidelines:
+  linkedin: "professional, confident, fact-led"
+  instagram: "warm, energetic"
+  twitter: "concise, witty"
+  facebook: "friendly, accessible"
+forbidden_terms: []
+---
+
+# Brand Context
+
+## Tone Guidelines
+
+See frontmatter `tone_guidelines`.

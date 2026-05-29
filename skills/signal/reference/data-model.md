@@ -2,7 +2,7 @@
 
 This is the source of truth for `.signal/` state, task artifacts, asset files, and shared schemas. Signal7 skills must prefer these field names and enum values over local inventions.
 
-> **Phase status.** Phase 0–4 are implemented: foundation, quick scope, campaign planning + plan-review, the full content worker surface (`signal-social`, `signal-copy`, `signal-image`, `signal-video`, `signal-translate`, `signal-research`, `signal-price`), and the full management surface (`signal-task`, `signal-backlog`, `signal-handoff`, `signal-retro`, `signal-recipe`). The remaining planned skill is `signal-team` (Phase 5). README § Status is the source of truth for what is shipped today.
+> **Phase status.** All five planned phases (0–5) are implemented: foundation, quick scope, campaign planning + plan-review, the full content worker surface (`signal-social`, `signal-copy`, `signal-image`, `signal-video`, `signal-translate`, `signal-research`, `signal-price`), the full management surface (`signal-task`, `signal-backlog`, `signal-handoff`, `signal-retro`, `signal-recipe`), and `signal-team` for second-opinion delegation. README § Status is the source of truth for what is shipped today.
 
 ## State Root
 
@@ -31,6 +31,7 @@ Project state lives under `.signal/` in the user's project, not inside the Signa
     past-campaigns.md
     approved-claims.md
   recipes/                      # created lazily by signal-recipe
+  team/                         # created lazily by signal-team (raw output + providers/)
   backlog.md                    # managed by signal-backlog
   retro.md                      # created lazily by signal-retro project-level
   config.yaml

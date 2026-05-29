@@ -10,6 +10,7 @@ Write-side Signal7 skills ensure `.signal/` exists before writing state. Read-si
   archive/         # created lazily on first archive move
   context/
   recipes/         # created lazily by signal-recipe on first create
+  team/            # created lazily by signal-team on first delegation; holds raw + verified team artifacts and providers/
   backlog.md       # seeded by bootstrap; managed by signal-backlog
   retro.md         # created lazily by signal-retro on first project-level retro
   config.yaml
@@ -81,6 +82,7 @@ These skills ensure `.signal/` exists before writing:
 - `signal-recipe` — `create`, `update`, `delete`, `run` (creates `.signal/recipes/` lazily)
 - `signal-handoff` — writes `handoff.md` into the active task folder
 - `signal-retro` — writes per-task `retro.md` or appends to `.signal/retro.md`
+- `signal-team` — creates `.signal/team/` lazily for raw teammate output and verified team artifacts
 
 ## Read-side Skills
 

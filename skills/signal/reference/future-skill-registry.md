@@ -30,11 +30,11 @@ Do not create a Phase 0 placeholder for `signal-price`. Phase 3 either implement
 | signal-handoff | Write a session handoff doc for an in-flight task | User-triggered |
 | signal-retro | Reflect on a finished task or session | User-triggered |
 
-## Phase 5 — Planned
+## Phase 5 — Implemented
 
 | Skill | Purpose | Notes |
 |---|---|---|
-| signal-team | Dispatch a second AI for an independent review | User-triggered |
+| signal-team | Dispatch a second AI for an independent review | User-triggered; raw output to `.signal/team/`, verified artifact to the task folder when scoped to one |
 
 ## Phase 3 — Implemented
 

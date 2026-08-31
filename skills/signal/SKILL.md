@@ -19,6 +19,7 @@ Signal7 orchestrates business operations workflows. It owns top-level task routi
 - `skills/signal/reference/archive.md`
 - `skills/signal/reference/portability.md`
 - `skills/signal/reference/cross-system-boundaries.md`
+- `skills/signal/reference/marketer7-integration.md` when a Marketer7 brief is supplied
 
 `README.md` § Status is the authoritative inventory of what is implemented today. Anything in the reference docs not listed there is forward-looking.
 
@@ -37,6 +38,8 @@ If no task exists for a new goal:
 3. Seed `dashboard.md`.
 4. Set `phase: brief`.
 5. Dispatch `signal-brief` (inline; see `portability.md` § Dispatch Contract).
+
+If the user explicitly supplies a path to a Marketer7 `signal7-execution-brief/v1` for a new task, create the ordinary task as above, then dispatch `signal-marketer` inline before `signal-brief`. Apply its verdict: on `awaiting-input`, set the normal task gate and stop; on `phase-complete`, keep `phase: brief` and proceed through `signal-brief`. This bridge records only bounded execution context. It does not bypass Signal7 brief, claims, review, or publish gates and does not read `.marketer/`.
 
 If `awaiting` is set and the user has not replied to the open gate, surface the gate and stop.
 

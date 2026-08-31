@@ -16,6 +16,7 @@ Turn the user's request into an approved business brief. Do not write any field 
 - `skills/signal/reference/gates.md`
 - `skills/signal/reference/intake-triage.md`
 - `skills/signal/reference/compliance-and-audit.md`
+- task `marketer-execution-brief.md` when present
 
 ## Responsibilities
 
@@ -25,6 +26,8 @@ Turn the user's request into an approved business brief. Do not write any field 
 - Create `compliance.md` for every task from `skills/signal/templates/compliance.md`. The template default (`regulated_domain: false`, `status: clear`) is the safe baseline. *Raise* it only when triage detects regulated content.
 - On approval re-dispatch, record the user's reply on `brief.md` `## Approval` (`Status: approved` or `Status: rejected — <reason>`) before returning `phase-complete`.
 - Never write `task.md` `phase`, `awaiting`, or `scope`.
+
+When `marketer-execution-brief.md` is present, treat its action, audience, channel, allowed/forbidden claims, stop conditions, and tracking as a bounded execution input. Preserve those constraints in `brief.md` or explain any Signal-owned claim/compliance block. Do not treat the originating hypothesis, KPI, threshold, or desired verdict as a Signal7 criterion, and do not read the source `.marketer/` project.
 
 ## Scope Handling
 

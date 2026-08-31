@@ -74,6 +74,10 @@ Publish idempotency keys must include `task_id` so task-scoped asset ids cannot 
 ---
 id: A<N>
 parent: S<N>
+source_system: marketer7 | null
+mission_id: M<N> | null
+experiment_id: EX-<NNN> | null
+tracking: null | mapping
 title: Asset title
 status: todo | needs-revision | in-progress | done | blocked | cancelled
 cancelled_reason: null
@@ -105,6 +109,12 @@ generation_log: []
 - `needs-revision` — `signal-review` flagged this asset as failing the AI rubric or rejected by a human; `signal-create` will pick it up on redirect, increment `revision`, and dispatch a worker again. Set by `signal-review` only.
 - `blocked` — a worker reported it could not produce this asset (missing context, unsupported asset type in current phase). Surfaced to the user via `awaiting-input`.
 - `cancelled` — kept on disk after a re-plan removed the asset. Never deleted; downstream dependents must treat it as blocking.
+
+## Optional Marketer7 origin metadata
+
+`task.md` and asset frontmatter may feature-detect these optional fields: `source_system`, `mission_id`, `experiment_id`, `tracking`, and `execution_brief_path` (task only). A legacy file without them remains valid unchanged. If `source_system: marketer7` is present, `mission_id`, `experiment_id`, and a `tracking` key are required and every derived asset must retain the same values. These fields identify execution context only; they never affect Signal task phase, review, publish eligibility, or experiment evaluation.
+
+Marketer7's `signal7-execution-brief/v1` is consumed by `signal-marketer`. Signal writes a task-local `marketer-execution-brief.md` snapshot plus `execution-result.md` from `templates/execution-result.md` with `contract: signal7-execution-result/v1`; it never reads or writes `.marketer/`.
 
 Templates ship with `<TODO>` sentinels for `id`, `parent`, `title`, `asset_type`, and `channel`. `signal-create` must replace every sentinel before returning `phase-complete`. A remaining sentinel is a hard error, not a default.
 
@@ -265,6 +275,10 @@ Append-only ledger owned by `signal-publish`.
   idempotency_key: sha256:<hex>
   status: published | skipped-duplicate | blocked-expired | blocked-external-gate | blocked-rate-limit | failed
   message: ""
+  source_system: marketer7            # optional
+  mission_id: M<N>                    # optional
+  experiment_id: EX-<NNN>             # optional
+  tracking: {}                        # optional
 ```
 
 Status values:
@@ -285,6 +299,8 @@ task_id + asset_id + channel + publish_at + content_hash
 `publish_at` participates as either a non-empty timestamp string (`YYYY-MM-DDTHH:MM:SS`) or the literal token `null` when `publish_at` was unset at publish time. The token form is intentional: it makes the key stable across writes that filled `publish_at` in later. If a task wants its eventual `publish_at` value to influence the key, it must set `publish_at` *before* publishing — a later edit does not retroactively change the published key.
 
 `signal-publish` reads existing publish-log entries written under earlier rules without modification; only new writes follow the rule above.
+
+For a Marketer-originated task, a new ledger entry may add `source_system`, `mission_id`, `experiment_id`, and `tracking`. These optional fields do not participate in idempotency and legacy entries without them remain valid.
 
 ## Context Files
 

@@ -39,7 +39,8 @@ For campaign scope, also read `content-plan.md`. Phase 2 reaches this branch aft
 5. Replace every `<TODO>` sentinel in `templates/asset.md` with the resolved value when stamping `A<N>-*.md` files. Required: `id`, `parent`, `title`, `asset_type`, `channel`. A remaining sentinel is a hard error and must be surfaced as `awaiting-input` rather than left in place.
 6. Pin `brand_version` and `product_version` from context files when available.
 7. Set `external_gate: null` unless the brief requires one.
-8. Dispatch eligible assets through `signal-worker` (see `portability.md` § Dispatch Contract). Sequential dispatch is permitted; parallel dispatch requires a sub-agent per asset and disjoint `writes[]`.
+8. When task `task.md` has `source_system: marketer7`, copy its `source_system`, `mission_id`, `experiment_id`, and `tracking` unchanged to every new asset. These are optional on legacy tasks and never alter worker routing or review requirements.
+9. Dispatch eligible assets through `signal-worker` (see `portability.md` § Dispatch Contract). Sequential dispatch is permitted; parallel dispatch requires a sub-agent per asset and disjoint `writes[]`.
 
 ## Campaign Scope
 
@@ -48,7 +49,8 @@ For campaign scope, also read `content-plan.md`. Phase 2 reaches this branch aft
 3. Create missing stubs.
 4. Ignore stubs with `status: cancelled`.
 5. Do not delete obsolete stubs; re-plans mark them cancelled.
-6. Dispatch eligible assets through `signal-worker`.
+6. Propagate Marketer7 origin metadata from task to newly created or normal-operation-updated assets only when the task declares `source_system: marketer7`; do not rewrite legacy assets.
+7. Dispatch eligible assets through `signal-worker`.
 
 ## Strategy Scope
 

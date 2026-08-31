@@ -54,6 +54,10 @@ Do not write `task.md` `phase:` or `awaiting:`.
 
 Append entries to `publish-log.md`. Do not rewrite earlier entries. Pre-existing entries written under earlier idempotency rules remain valid; only new writes follow the current rule.
 
+For a task with `source_system: marketer7`, copy its optional `source_system`, `mission_id`, `experiment_id`, and `tracking` fields into each newly appended ledger entry. Do not add them to legacy entries, and do not include them in the idempotency input.
+
+Also append a factual row to that task's `execution-result.md` (`signal7-execution-result/v1`) with task ID, asset ID, channel, ledger status, timestamp, tracking, ledger reference, and publication URL when known; retain `unknown` when it is not known. Update only the result summary status needed to reflect the recorded events. This is executor-side evidence, not performance measurement or a Marketer7 experiment verdict.
+
 ## Output Contract
 
 Allowed verdicts: `phase-complete`, `awaiting-input`.

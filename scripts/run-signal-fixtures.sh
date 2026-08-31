@@ -68,6 +68,25 @@ yaml_scalar() {
     }'
 }
 
+# Find the value of a top-level scalar key only. This avoids treating a nested
+# external-gate/source field as task- or asset-level integration metadata.
+yaml_top_scalar() {
+  local key="$1"
+  awk -v k="$key" '
+    $0 ~ "^"k"[[:space:]]*:[[:space:]]*" {
+      sub("^"k"[[:space:]]*:[[:space:]]*","")
+      sub("[[:space:]]+#.*$","")
+      gsub(/^['"'"']|['"'"']$/ ,"")
+      print
+      exit
+    }'
+}
+
+yaml_has_top_key() {
+  local key="$1"
+  awk -v k="$key" '$0 ~ "^"k"[[:space:]]*:" {found=1; exit} END {exit !found}'
+}
+
 # Extract a markdown section (from `## Section` heading to next `##` or EOF).
 # prints section body to stdout (excluding the heading line).
 extract_section() {
@@ -195,6 +214,78 @@ check_asset_md() {
   fi
   if [[ -z "$asset_type" ]]; then
     fail "$fixture" "asset $(basename "$file") missing asset_type"
+  fi
+}
+
+check_marketer_metadata() {
+  local fixture="$1"
+  local task_dir="$2"
+  local task_md="$task_dir/task.md"
+  local task_fm source mission experiment
+  task_fm="$(extract_frontmatter "$task_md")"
+  source="$(echo "$task_fm" | yaml_top_scalar source_system)"
+  [[ "$source" == "marketer7" ]] || return
+
+  mission="$(echo "$task_fm" | yaml_top_scalar mission_id)"
+  experiment="$(echo "$task_fm" | yaml_top_scalar experiment_id)"
+  [[ "$mission" =~ ^M[0-9]+$ ]] || fail "$fixture" "Marketer task mission_id not M<N>: '$mission'"
+  [[ "$experiment" =~ ^EX-[0-9]+$ ]] || fail "$fixture" "Marketer task experiment_id not EX-<NNN>: '$experiment'"
+  echo "$task_fm" | yaml_has_top_key tracking || fail "$fixture" "Marketer task missing tracking key"
+
+  local brief="$task_dir/marketer-execution-brief.md"
+  if [[ ! -f "$brief" ]]; then
+    fail "$fixture" "Marketer task missing marketer-execution-brief.md"
+  else
+    local brief_fm brief_contract brief_source brief_mission brief_experiment brief_executor
+    brief_fm="$(extract_frontmatter "$brief")"
+    brief_contract="$(echo "$brief_fm" | yaml_top_scalar contract)"
+    brief_source="$(echo "$brief_fm" | yaml_top_scalar source_system)"
+    brief_mission="$(echo "$brief_fm" | yaml_top_scalar mission_id)"
+    brief_experiment="$(echo "$brief_fm" | yaml_top_scalar experiment_id)"
+    brief_executor="$(echo "$brief_fm" | yaml_top_scalar executor)"
+    [[ "$brief_contract" == "signal7-execution-brief/v1" ]] || fail "$fixture" "Marketer execution brief has unsupported contract '$brief_contract'"
+    [[ "$brief_source" == "marketer7" ]] || fail "$fixture" "Marketer execution brief source_system not marketer7"
+    [[ "$brief_mission" == "$mission" ]] || fail "$fixture" "Marketer execution brief mission_id does not match task"
+    [[ "$brief_experiment" == "$experiment" ]] || fail "$fixture" "Marketer execution brief experiment_id does not match task"
+    [[ "$brief_executor" == "signal7" ]] || fail "$fixture" "Marketer execution brief executor is not signal7"
+    echo "$brief_fm" | yaml_has_top_key tracking || fail "$fixture" "Marketer execution brief missing tracking key"
+  fi
+
+  local result="$task_dir/execution-result.md"
+  if [[ ! -f "$result" ]]; then
+    fail "$fixture" "Marketer task missing execution-result.md"
+  else
+    local result_fm result_contract result_task result_mission result_experiment
+    result_fm="$(extract_frontmatter "$result")"
+    result_contract="$(echo "$result_fm" | yaml_top_scalar contract)"
+    result_task="$(echo "$result_fm" | yaml_top_scalar signal_task_id)"
+    result_mission="$(echo "$result_fm" | yaml_top_scalar mission_id)"
+    result_experiment="$(echo "$result_fm" | yaml_top_scalar experiment_id)"
+    [[ "$result_contract" == "signal7-execution-result/v1" ]] || fail "$fixture" "execution-result.md has unsupported contract '$result_contract'"
+    [[ "$result_task" == "$(echo "$task_fm" | yaml_top_scalar id)" ]] || fail "$fixture" "execution-result.md signal_task_id does not match task"
+    [[ "$result_mission" == "$mission" ]] || fail "$fixture" "execution-result.md mission_id does not match task"
+    [[ "$result_experiment" == "$experiment" ]] || fail "$fixture" "execution-result.md experiment_id does not match task"
+    echo "$result_fm" | yaml_has_top_key tracking || fail "$fixture" "execution-result.md missing tracking key"
+  fi
+
+  while IFS= read -r asset_md; do
+    local asset_fm asset_source asset_mission asset_experiment
+    asset_fm="$(extract_frontmatter "$asset_md")"
+    asset_source="$(echo "$asset_fm" | yaml_top_scalar source_system)"
+    asset_mission="$(echo "$asset_fm" | yaml_top_scalar mission_id)"
+    asset_experiment="$(echo "$asset_fm" | yaml_top_scalar experiment_id)"
+    [[ "$asset_source" == "marketer7" ]] || fail "$fixture" "Marketer asset $(basename "$asset_md") source_system not propagated"
+    [[ "$asset_mission" == "$mission" ]] || fail "$fixture" "Marketer asset $(basename "$asset_md") mission_id not propagated"
+    [[ "$asset_experiment" == "$experiment" ]] || fail "$fixture" "Marketer asset $(basename "$asset_md") experiment_id not propagated"
+    echo "$asset_fm" | yaml_has_top_key tracking || fail "$fixture" "Marketer asset $(basename "$asset_md") missing tracking key"
+  done < <(find "$task_dir" -maxdepth 1 -type f -name 'A[0-9]*.md')
+
+  local ledger="$task_dir/publish-log.md"
+  if [[ -f "$ledger" ]]; then
+    grep -q '^[[:space:]]*source_system:[[:space:]]*marketer7[[:space:]]*$' "$ledger" || fail "$fixture" "Marketer publish ledger missing source_system"
+    grep -q "^[[:space:]]*mission_id:[[:space:]]*$mission[[:space:]]*$" "$ledger" || fail "$fixture" "Marketer publish ledger missing mission_id"
+    grep -q "^[[:space:]]*experiment_id:[[:space:]]*$experiment[[:space:]]*$" "$ledger" || fail "$fixture" "Marketer publish ledger missing experiment_id"
+    grep -q '^[[:space:]]*tracking:' "$ledger" || fail "$fixture" "Marketer publish ledger missing tracking"
   fi
 }
 
@@ -522,6 +613,7 @@ run_fixture() {
     while IFS= read -r asset_md; do
       check_asset_md "$name" "$asset_md"
     done < <(find "$task_dir" -maxdepth 1 -type f -name 'A[0-9]*.md')
+    check_marketer_metadata "$name" "$task_dir"
   done < <(find "$fixture_dir/.signal/tasks" -mindepth 1 -maxdepth 1 -type d 2>/dev/null)
 
   # Layer 1: fixture expectation parity check

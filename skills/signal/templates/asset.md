@@ -1,6 +1,10 @@
 ---
 id: <TODO>
 parent: <TODO>
+source_system: null
+mission_id: null
+experiment_id: null
+tracking: null
 title: <TODO>
 status: todo
 cancelled_reason: null

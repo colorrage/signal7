@@ -13,7 +13,7 @@ Any contract change to phase skills should update the matching fixture(s).
 
 ## Fixtures
 
-All 20 fixtures are listed below. The first nine are Phase 1 orchestrator and campaign fixtures; the next six are Phase 3 content worker fixtures; the last five are Phase 4+5 management and signal-team fixtures.
+All 21 fixtures are listed below. The first nine are Phase 1 orchestrator and campaign fixtures; the next six are Phase 3 content worker fixtures; the remaining six cover management, collaboration, and the optional Marketer7 execution bridge.
 
 | Fixture | Covers |
 |---|---|
@@ -32,6 +32,7 @@ All 20 fixtures are listed below. The first nine are Phase 1 orchestrator and ca
 | `video-script-generate/` | **Phase 3 — signal-video.** Video script generation from brand.md context and brief.md objective. |
 | `research-generate-report/` | **Phase 3 — signal-research.** Research report generation using competitor and market context files. |
 | `worker-routing-expanded/` | **Phase 3 — signal-worker.** Worker dispatch routing for all implemented content workers. Verifies correct routing by asset_type. |
+| `marketer7-execution-brief/` | **Optional Marketer7 bridge.** Validates `signal7-execution-brief/v1` association fields, metadata propagation to asset/ledger/result, and the no-experiment-verdict boundary. |
 | `backlog-add-promote/` | **Phase 4 — signal-backlog.** `add` writes a backlog entry with `B<N>` id; `promote B<N>` creates a deferred `S<N>` task folder seeded from the backlog entry. Structural validation. |
 | `recipe-create-run/` | **Phase 4 — signal-recipe.** `create` writes a recipe file to `.signal/recipes/`; `run` reads the recipe, stages steps, and updates `last_run` / `run_count` frontmatter. Structural validation. |
 | `handoff-write/` | **Phase 4 — signal-handoff.** Writes `handoff.md` to the active task folder with all six required sections and appends a `## Decisions` entry to `dashboard.md`. Structural validation. |

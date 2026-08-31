@@ -63,6 +63,7 @@ Signal7 mirrors Hyper7's architecture: disk-based state (`.signal/` folder), gat
 - Campaign planning skills: `signal-plan` and isolated-context `signal-plan-review`
 - The `signal` orchestrator, the foundation reference docs, and the asset/brief/compliance schemas
 - Disk-based state (`.signal/`), idempotent publish ledger, AI review rubric, prompt storage with hashes
+- Optional Marketer7 execution-brief import (`signal7-execution-brief/v1`), origin metadata propagation, and task-local execution results. The bridge is file-based and preserves legacy tasks/assets/ledger entries without migration; it does not evaluate experiments or provide performance feedback.
 - A three-layer QA testing system: Layer 1 static checks (`scripts/run-signal-fixtures.sh`), Layer 2 live-skill replay (`scripts/replay-fixture.sh` / `scripts/run-all-fixtures.sh`), and Layer 3 manual pre-ship checklist (`evals/qa-checklist.md`). See `evals/signal-fixtures/README.md` for the full documentation.
 - The full management surface (Phase 4):
   - `signal-task` — `list`, `status`, `cancel`, `defer`, `create-deferred`, `promote`
@@ -96,7 +97,7 @@ The `Status` section in this README is the source of truth for what is shipped. 
 
 **Implemented internal skills (not user-invocable):**
 
-`signal-brief`, `signal-plan`, `signal-plan-review`, `signal-create`, `signal-review`, `signal-publish`, `signal-worker`, `signal-social`, `signal-copy`, `signal-image`, `signal-video`, `signal-translate`, `signal-research`, `signal-price`.
+`signal-brief`, `signal-plan`, `signal-plan-review`, `signal-create`, `signal-review`, `signal-publish`, `signal-worker`, `signal-marketer`, `signal-social`, `signal-copy`, `signal-image`, `signal-video`, `signal-translate`, `signal-research`, `signal-price`.
 
 **Planned (will refuse with a clear message until shipped):**
 

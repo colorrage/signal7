@@ -34,6 +34,7 @@ Plan campaign-scope Signal7 work. Do not write `task.md` `phase:`, `awaiting:`, 
 - Mark removed or obsolete stubs as `status: cancelled` with `cancelled_reason`; never silently delete old stubs.
 - Pin `brand_version` and `product_version` from context files when available.
 - Set `external_gate: null` unless the brief or compliance artifact names an external prerequisite.
+- When task metadata declares `source_system: marketer7`, copy its origin IDs and tracking unchanged into each newly created asset stub. Do not add metadata to a legacy task or use it to alter asset planning.
 - Ask for plan approval before `create`.
 
 ## Asset Planning Rules

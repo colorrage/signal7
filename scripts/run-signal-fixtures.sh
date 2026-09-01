@@ -11,6 +11,7 @@
 #     replaced them
 #   - idempotency_key shape: sha256:<64 hex chars>
 #   - expectations.md exists per fixture
+#   - explicitly expected-invalid fixtures prove their named rejection errors
 #
 # This runner does NOT execute Signal7 skills end-to-end. That requires a
 # host (Claude Code, Codex, etc.) and a model. The runner is a regression net
@@ -583,8 +584,9 @@ scan_skills() {
 
 run_fixture() {
   local fixture_dir="$1"
-  local name
+  local name expectations_fm expected_result expected_error failures_before failures_after fixture_failure
   name="$(basename "$fixture_dir")"
+  failures_before=${#FAILS[@]}
   echo
   echo "=== fixture: $name ==="
 
@@ -592,6 +594,15 @@ run_fixture() {
     fail "$name" "missing expectations.md"
     return
   fi
+
+  expectations_fm="$(extract_frontmatter "$fixture_dir/expectations.md")"
+  expected_result="$(echo "$expectations_fm" | yaml_scalar expected_static_result)"
+  expected_result="${expected_result:-pass}"
+  expected_error="$(echo "$expectations_fm" | yaml_scalar expected_error)"
+  case "$expected_result" in
+    pass|fail) ;;
+    *) fail "$name" "expectations.md expected_static_result must be pass or fail: '$expected_result'"; return ;;
+  esac
 
   echo "expectations:"
   awk '/^# Trigger$|^## Trigger$/{print_p=1; print "  ---"; next}
@@ -619,7 +630,30 @@ run_fixture() {
   # Layer 1: fixture expectation parity check
   check_fixture_expectation_parity "$name" "$fixture_dir"
 
-  if (( FAIL_COUNT == 0 )) || ! printf '%s\n' "${FAILS[@]}" | grep -q "^$name:"; then
+  failures_after=${#FAILS[@]}
+  if [[ "$expected_result" == "fail" ]]; then
+    if (( failures_after == failures_before )); then
+      fail "$name" "expected static failure but fixture passed"
+      return
+    fi
+    if [[ -z "$expected_error" ]]; then
+      fail "$name" "expected-invalid fixture is missing expected_error"
+      return
+    fi
+    for ((index=failures_before; index<failures_after; index++)); do
+      fixture_failure="${FAILS[index]}"
+      if [[ "$fixture_failure" != *"$expected_error"* ]]; then
+        fail "$name" "unexpected failure in expected-invalid fixture: ${fixture_failure#"$name: "}"
+        return
+      fi
+    done
+    FAILS=("${FAILS[@]:0:failures_before}")
+    FAIL_COUNT=$((FAIL_COUNT - (failures_after - failures_before)))
+    PASS_COUNT=$((PASS_COUNT + 1))
+    echo "  EXPECTED FAIL: $expected_error"
+    return
+  fi
+  if (( failures_after == failures_before )); then
     PASS_COUNT=$((PASS_COUNT + 1))
     echo "  PASS"
   fi
